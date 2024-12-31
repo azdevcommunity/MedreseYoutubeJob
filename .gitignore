@@ -21,6 +21,12 @@
 **/.idea/**/contentModel.xml
 **/.idea/**/modules.xml
 
+# Ignore build outputs
+bin/
+obj/
+Debug/
+Release/
+
 *.suo
 *.user
 .vs/
