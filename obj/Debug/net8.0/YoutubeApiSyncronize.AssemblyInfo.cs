@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("YoutubeApiSyncronize")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6dfe6de190b294038c17e34ce62bc1efa4ea80d2")]
 [assembly: System.Reflection.AssemblyProductAttribute("YoutubeApiSyncronize")]
 [assembly: System.Reflection.AssemblyTitleAttribute("YoutubeApiSyncronize")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

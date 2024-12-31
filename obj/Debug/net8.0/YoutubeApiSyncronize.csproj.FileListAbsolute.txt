@@ -141,3 +141,4 @@
 /Users/yusifhasanov/RiderProjects/ApiTest/YoutubeApiSyncronize/obj/Debug/net8.0/YoutubeApiSyncronize.pdb
 /Users/yusifhasanov/RiderProjects/ApiTest/YoutubeApiSyncronize/obj/Debug/net8.0/YoutubeApiSyncronize.genruntimeconfig.cache
 /Users/yusifhasanov/RiderProjects/ApiTest/YoutubeApiSyncronize/obj/Debug/net8.0/ref/YoutubeApiSyncronize.dll
+/Users/yusifhasanov/RiderProjects/ApiTest/YoutubeApiSyncronize/obj/Debug/net8.0/YoutubeApiSyncronize.sourcelink.json
