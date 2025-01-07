@@ -7,6 +7,7 @@ namespace YoutubeApiSyncronize.Entity;
 public class Video
 {
     [Key]
+    [Column("id")]
     public int Id { get; set; }
     
     [Column("video_id")]
@@ -15,9 +16,8 @@ public class Video
     [Column("title")]
     public string Title { get; set; }
     
-    
     [Column("published_at")]
-    public string PublishedAt { get; set; } 
+    public DateTimeOffset? PublishedAt { get; set; } 
     
     [Column("thumbnail")]
     public string Thumbnail { get; set; } 

@@ -8,6 +8,7 @@ namespace YoutubeApiSyncronize.Entity;
 public class PlaylistVideo
 {
     [Key]
+    [Column("id")]
     public int Id { get; set; }
     
     [Column("video_id")]

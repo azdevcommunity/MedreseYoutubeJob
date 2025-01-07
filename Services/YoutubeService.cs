@@ -13,32 +13,24 @@ public class YoutubeService(
     ILogger<YoutubeService> logger,
     IOptions<YoutubeConfig> youtubeConfig)
 {
-    
     private readonly YouTubeService _youtubeService = new(new BaseClientService.Initializer
     {
         ApiKey = youtubeConfig.Value.DeveloperKey,
         ApplicationName = "YouTubePlaylistFetcher"
     });
 
-    
+
     public async Task<object> SyncAsync()
     {
-        int maxSearchResults = 50;
         try
         {
             logger.LogInformation("Starting synchronization process...");
 
-            logger.LogInformation("Fetching playlists and videos...");
-            var playlists = await GetPlaylistsAsync();
-            foreach (var playlist in playlists)
-            {
-                var videos = await GetVideosInPlaylistAsync(playlist.PlaylistId);
-                logger.LogInformation($"Found {videos.Count} videos for playlist {playlist.PlaylistId}");
-                await SavePlaylistAndVideosAsync(playlist, videos);
-            }
+            await ProcessPlaylistsAndVideos();
 
-            var searchVideos = await SearchVideosAsync(maxSearchResults);
-            await SaveVideosAsync(searchVideos);
+            await SaveSearchVideosAsync();
+
+            await UpdatePlaylistCountAsync();
 
             logger.LogInformation("Synchronization completed successfully.");
             return new { Message = "YouTube data synchronized successfully." };
@@ -47,6 +39,46 @@ public class YoutubeService(
         {
             logger.LogError(ex, "An error occurred during synchronization.");
             return new { Error = "An error occurred during synchronization." };
+        }
+    }
+
+
+    private async Task ProcessPlaylistsAndVideos()
+    {
+        logger.LogInformation("Fetching playlists and videos...");
+        try
+        {
+            var playlists = await GetPlaylistsAsync();
+            foreach (var playlist in playlists)
+            {
+                var videos = await GetVideosInPlaylistAsync(playlist.PlaylistId);
+                logger.LogInformation($"Found {videos.Count} videos for playlist {playlist.PlaylistId}");
+                await SavePlaylistAndVideosAsync(playlist, videos);
+            }
+        }
+        catch (Exception e)
+        {
+            logger.LogError(e, "An error occurred during ProcessPlaylistsAndVideos.");
+        }
+    }
+
+    private async Task UpdatePlaylistCountAsync()
+    {
+        try
+        {
+            var playlists = await dbContext.Playlists.ToListAsync();
+
+            foreach (var playlist in playlists)
+            {
+                var count = await dbContext.PlaylistVideos.CountAsync(x => x.PlaylistId == playlist.PlaylistId);
+                playlist.VideoCount = count;
+            }
+
+            await dbContext.SaveChangesAsync();
+        }
+        catch (Exception e)
+        {
+            logger.LogError(e, "An error occurred during UpdatePlaylistCountAsync.");
         }
     }
 
@@ -76,7 +108,7 @@ public class YoutubeService(
                         Thumbnail = item.Snippet.Thumbnails.Default__.Url + "+" +
                                     item.Snippet.Thumbnails.Medium.Url + "+" +
                                     item.Snippet.Thumbnails.High.Url,
-                        PublishedAt = item.Snippet.PublishedAtRaw
+                        PublishedAt = DateTimeOffset.Parse(item.Snippet.PublishedAtRaw)
                     }));
             }
 
@@ -112,7 +144,7 @@ public class YoutubeService(
                             item.Snippet.Thumbnails?.Default__?.Url ?? string.Empty,
                             item.Snippet.Thumbnails?.Medium?.Url ?? string.Empty,
                             item.Snippet.Thumbnails?.High?.Url ?? string.Empty),
-                        PublishedAt = item.Snippet.PublishedAtRaw
+                        PublishedAt = DateTimeOffset.Parse(item.Snippet.PublishedAtRaw)
                     }));
             }
 
@@ -149,7 +181,7 @@ public class YoutubeService(
                         Thumbnail = searchResult.Snippet.Thumbnails.Default__.Url + "+" +
                                     searchResult.Snippet.Thumbnails.Medium.Url + "+" +
                                     searchResult.Snippet.Thumbnails.High.Url,
-                        PublishedAt = searchResult.Snippet.PublishedAtRaw
+                        PublishedAt = DateTimeOffset.Parse(searchResult.Snippet.PublishedAtRaw)
                     };
 
                     PlaylistVideo playlistVideo = new()
@@ -211,30 +243,42 @@ public class YoutubeService(
         }
     }
 
-    private async Task SaveVideosAsync((List<Video> videos, List<PlaylistVideo> playlistVideos) tuple)
+    private async Task SaveSearchVideosAsync()
     {
-        logger.LogInformation($"Saving videos: {string.Join(", ", tuple.videos)}");
-        foreach (var video in tuple.videos)
+        try
         {
-            if (!dbContext.Videos.Any(v => v.VideoId == video.VideoId))
+            int maxSearchResults = 50;
+
+            (List<Video> videos, List<PlaylistVideo> playlistVideos) tuple = await SearchVideosAsync(maxSearchResults);
+
+            logger.LogInformation($"Saving videos: {string.Join(", ", tuple.videos)}");
+
+            foreach (var video in tuple.videos)
             {
-                logger.LogInformation($"Saving video: {video.VideoId}");
-                dbContext.Videos.Add(video);
-                await dbContext.SaveChangesAsync();
+                if (!dbContext.Videos.Any(v => v.VideoId == video.VideoId))
+                {
+                    logger.LogInformation($"Saving video: {video.VideoId}");
+                    dbContext.Videos.Add(video);
+                    await dbContext.SaveChangesAsync();
+                }
+            }
+
+            logger.LogInformation($"Saved videos: {string.Join(", ", tuple.videos)}");
+
+            foreach (var playlistVideo in tuple.playlistVideos)
+            {
+                if (!dbContext.PlaylistVideos.Any(v =>
+                        v.VideoId == playlistVideo.VideoId && v.PlaylistId == playlistVideo.PlaylistId))
+                {
+                    logger.LogInformation($"Saving playlist video: {playlistVideo.VideoId}");
+                    dbContext.PlaylistVideos.Add(playlistVideo);
+                    await dbContext.SaveChangesAsync();
+                }
             }
         }
-
-        logger.LogInformation($"Saved videos: {string.Join(", ", tuple.videos)}");
-
-        foreach (var playlistVideo in tuple.playlistVideos)
+        catch (Exception e)
         {
-            if (!dbContext.PlaylistVideos.Any(v =>
-                    v.VideoId == playlistVideo.VideoId && v.PlaylistId == playlistVideo.PlaylistId))
-            {
-                logger.LogInformation($"Saving playlist video: {playlistVideo.VideoId}");
-                dbContext.PlaylistVideos.Add(playlistVideo);
-                await dbContext.SaveChangesAsync();
-            }
+            logger.LogError($"Error while saving videos: {e.Message}");
         }
     }
 }
