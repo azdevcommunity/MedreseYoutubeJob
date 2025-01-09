@@ -5,11 +5,13 @@ pipeline {
         GIT_CREDENTIALS = 'github-cred'
         IMAGE_NAME = "medrese-job"
         CONTAINER_NAME_PREFIX = "medrese-backend-container"
-        DATABASE_URL = "jdbc:postgresql://31.220.95.127:5433/esmdb"
+        DATABASE_HOST = "31.220.95.127"
         DATABASE_USERNAME = "postgres"
-        DATABASE_PASSWORD = "123456789"
+        DATABASE_PASSWORD = "123456789",
+        DATABASE_PORT = 5433,
+        DATABASE_NAME = "esmdb",
         PORT = "8085"
-        CONNECTION_STRING = "Host=31.220.95.127;Port=5433;Database=esmdb;Username=postgres;Password=123456789"
+//         CONNECTION_STRING = "Host=31.220.95.127;Port=5433;Database=esmdb;Username=postgres;Password=123456789"
     }
 
     stages {
@@ -60,7 +62,11 @@ pipeline {
                     // Run the new container
                     sh """
                     docker run -d \
-                    -e ConnectionString=${CONNECTION_STRING} \
+                    -e DATABASE_HOST=${DATABASE_HOST} \
+                    -e DATABASE_USERNAME=${DATABASE_USERNAME} \
+                    -e DATABASE_PASSWORD=${DATABASE_PASSWORD} \
+                    -e DATABASE_PORT=${DATABASE_PORT} \
+                    -e DATABASE_NAME=${DATABASE_NAME} \
                     -e PORT=${PORT} \
                     -p ${PORT}:${PORT} \
                     -v /var/www/esm/uploads:/app/uploads \

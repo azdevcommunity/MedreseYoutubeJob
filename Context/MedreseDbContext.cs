@@ -9,6 +9,8 @@ public class MedreseDbContext : DbContext
     public DbSet<Video> Videos { get; set; }
 
     public DbSet<PlaylistVideo> PlaylistVideos { get; set; }
+    
+    public MedreseDbContext(DbContextOptions<MedreseDbContext> options) : base(options) { }
 
     // protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     // {

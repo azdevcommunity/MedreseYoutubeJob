@@ -11,7 +11,10 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<MedreseDbContext>(options =>
 {
-    options.UseNpgsql(builder.Configuration["ConnectionString"]);
+    ConfigurationManager configuration = builder.Configuration;
+    options.UseNpgsql(
+        $"Host={configuration["DATABASE_HOST"]};Port={configuration["DATABASE_PORT"]};Database={configuration["DATABASE_NAME"]};Username={configuration["DATABASE_USERNAME"]};Password={configuration["DATABASE_PASSWORD"]}"
+    );
 });
 builder.Services.AddScoped<YoutubeService>();
 builder.Services.AddHostedService<YoutubeSynchronize>();
