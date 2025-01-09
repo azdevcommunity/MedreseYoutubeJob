@@ -1,4 +1,5 @@
 using System.Net.Mime;
+using Microsoft.EntityFrameworkCore;
 using YoutubeApiSyncronize.Context;
 using YoutubeApiSyncronize.Jobs;
 using YoutubeApiSyncronize.Options;
@@ -8,7 +9,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddDbContext<MedreseDbContext>();
+builder.Services.AddDbContext<MedreseDbContext>(options =>
+{
+    options.UseNpgsql(builder.Configuration["ConnectionString"]);
+});
 builder.Services.AddScoped<YoutubeService>();
 builder.Services.AddHostedService<YoutubeSynchronize>();
 builder.Services.Configure<YoutubeConfig>(builder.Configuration.GetSection("YoutubeConfig"));
