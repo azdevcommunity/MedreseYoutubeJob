@@ -1,8 +1,8 @@
 ﻿# Base runtime image for .NET applications
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
-EXPOSE 8080
-EXPOSE 8081
+
+EXPOSE 8085
 
 # Build stage: SDK image with the .NET tools installed
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
