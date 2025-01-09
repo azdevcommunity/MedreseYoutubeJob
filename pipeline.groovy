@@ -7,9 +7,9 @@ pipeline {
         CONTAINER_NAME_PREFIX = "medrese-backend-container"
         DATABASE_HOST = "31.220.95.127"
         DATABASE_USERNAME = "postgres"
-        DATABASE_PASSWORD = "123456789",
-        DATABASE_PORT = 5433,
-        DATABASE_NAME = "esmdb",
+        DATABASE_PASSWORD = "123456789"
+        DATABASE_PORT = 5433
+        DATABASE_NAME = "esmdb"
         PORT = "8085"
 //         CONNECTION_STRING = "Host=31.220.95.127;Port=5433;Database=esmdb;Username=postgres;Password=123456789"
     }
