@@ -5,10 +5,10 @@ pipeline {
         GIT_CREDENTIALS = 'github-cred'
         IMAGE_NAME = "medrese-job"
         CONTAINER_NAME_PREFIX = "medrese-backend-container"
-        DATABASE_HOST = "31.220.95.127"
+        DATABASE_HOST = "213.199.46.212"
         DATABASE_USERNAME = "postgres"
         DATABASE_PASSWORD = "123456789"
-        DATABASE_PORT = 5433
+        DATABASE_PORT = 5432
         DATABASE_NAME = "esmdb"
         PORT = "8085"
 //         CONNECTION_STRING = "Host=31.220.95.127;Port=5433;Database=esmdb;Username=postgres;Password=123456789"
@@ -62,6 +62,7 @@ pipeline {
                     // Run the new container
                     sh """
                     docker run -d \
+                    -e ASPNETCORE_URLS="http://+:8085"  \
                     -e DATABASE_HOST=${DATABASE_HOST} \
                     -e DATABASE_USERNAME=${DATABASE_USERNAME} \
                     -e DATABASE_PASSWORD=${DATABASE_PASSWORD} \
