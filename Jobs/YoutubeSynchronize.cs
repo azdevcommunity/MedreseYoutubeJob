@@ -12,7 +12,7 @@ public class YoutubeSynchronize(IServiceScopeFactory scopeFactory, ILogger logge
         {
             try
             {
-                logger.Information("Synchronizing job starting...");
+                logger.Information("Synchronizing job starting ...");
                 var delay = CalculateDuration();
                 await Task.Delay(delay, stoppingToken);
                 await SyncAsync();
