@@ -1,5 +1,7 @@
 using System.Net.Mime;
+using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
 using YoutubeApiSyncronize.Context;
 using YoutubeApiSyncronize.Jobs;
 using YoutubeApiSyncronize.Options;
@@ -9,9 +11,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+ 
 builder.Services.AddDbContext<MedreseDbContext>(options =>
 {
-    ConfigurationManager configuration = builder.Configuration;
+    var configuration = builder.Configuration;
     options.UseNpgsql(
         $"Host={configuration["DATABASE_HOST"]};Port={configuration["DATABASE_PORT"]};Database={configuration["DATABASE_NAME"]};Username={configuration["DATABASE_USERNAME"]};Password={configuration["DATABASE_PASSWORD"]}"
     );
@@ -22,13 +25,18 @@ builder.Services.Configure<YoutubeConfig>(builder.Configuration.GetSection("Yout
 builder.Services.AddHealthChecks();
 builder.Services.AddHttpLogging(logging =>
 {
-    logging.LoggingFields = Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.All;
-    logging.RequestHeaders.Add("Authorization");
-    logging.ResponseHeaders.Add("Content-Type");
+    logging.LoggingFields = HttpLoggingFields.None;
+    logging.RequestHeaders.Add("sec-ch-ua");
     logging.MediaTypeOptions.AddText(MediaTypeNames.Application.Json);
-    logging.MediaTypeOptions.AddText(MediaTypeNames.Application.Xml);
     logging.RequestBodyLogLimit = 4096;
     logging.ResponseBodyLogLimit = 4096;
+});
+builder.Host.UseSerilog((context, serilogServices, configuration) =>
+{
+    configuration
+        .WriteTo.Console()
+        .ReadFrom.Services(serilogServices)
+        .Enrich.FromLogContext();
 });
 
 var app = builder.Build();

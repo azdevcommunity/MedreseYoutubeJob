@@ -5,12 +5,13 @@ using Microsoft.Extensions.Options;
 using YoutubeApiSyncronize.Context;
 using YoutubeApiSyncronize.Entity;
 using YoutubeApiSyncronize.Options;
+using ILogger = Serilog.ILogger;
 
 namespace YoutubeApiSyncronize.Services;
 
 public class YoutubeService(
     MedreseDbContext dbContext,
-    ILogger<YoutubeService> logger,
+    ILogger logger,
     IOptions<YoutubeConfig> youtubeConfig)
 {
     private readonly YouTubeService _youtubeService = new(new BaseClientService.Initializer
@@ -20,11 +21,13 @@ public class YoutubeService(
     });
 
 
+    
+    
     public async Task<object> SyncAsync()
     {
         try
         {
-            logger.LogInformation("Starting synchronization process...");
+            logger.Information("Starting synchronization process... {}", new DateTime());
 
             await ProcessPlaylistsAndVideos();
 
@@ -32,33 +35,31 @@ public class YoutubeService(
 
             await UpdatePlaylistCountAsync();
 
-            logger.LogInformation("Synchronization completed successfully.");
+            logger.Information("Synchronization completed successfully.");
             return new { Message = "YouTube data synchronized successfully." };
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "An error occurred during synchronization.");
+            logger.Error(ex, "An error occurred during synchronization.");
             return new { Error = "An error occurred during synchronization." };
         }
     }
 
-
     private async Task ProcessPlaylistsAndVideos()
     {
-        logger.LogInformation("Fetching playlists and videos...");
+        logger.Information("Fetching playlists and videos...");
         try
         {
             var playlists = await GetPlaylistsAsync();
             foreach (var playlist in playlists)
             {
                 var videos = await GetVideosInPlaylistAsync(playlist.PlaylistId);
-                logger.LogInformation($"Found {videos.Count} videos for playlist {playlist.PlaylistId}");
                 await SavePlaylistAndVideosAsync(playlist, videos);
             }
         }
         catch (Exception e)
         {
-            logger.LogError(e, "An error occurred during ProcessPlaylistsAndVideos.");
+            logger.Error(e, "An error occurred during ProcessPlaylistsAndVideos.");
         }
     }
 
@@ -78,10 +79,9 @@ public class YoutubeService(
         }
         catch (Exception e)
         {
-            logger.LogError(e, "An error occurred during UpdatePlaylistCountAsync.");
+            logger.Error(e, "An error occurred during UpdatePlaylistCountAsync.");
         }
     }
-
 
     private async Task<List<Playlist>> GetPlaylistsAsync()
     {
@@ -251,26 +251,21 @@ public class YoutubeService(
 
             (List<Video> videos, List<PlaylistVideo> playlistVideos) tuple = await SearchVideosAsync(maxSearchResults);
 
-            logger.LogInformation($"Saving videos: {string.Join(", ", tuple.videos)}");
-
             foreach (var video in tuple.videos)
             {
                 if (!dbContext.Videos.Any(v => v.VideoId == video.VideoId))
                 {
-                    logger.LogInformation($"Saving video: {video.VideoId}");
+                    logger.Information($"Saving video: {video.VideoId}");
                     dbContext.Videos.Add(video);
                     await dbContext.SaveChangesAsync();
                 }
             }
-
-            logger.LogInformation($"Saved videos: {string.Join(", ", tuple.videos)}");
 
             foreach (var playlistVideo in tuple.playlistVideos)
             {
                 if (!dbContext.PlaylistVideos.Any(v =>
                         v.VideoId == playlistVideo.VideoId && v.PlaylistId == playlistVideo.PlaylistId))
                 {
-                    logger.LogInformation($"Saving playlist video: {playlistVideo.VideoId}");
                     dbContext.PlaylistVideos.Add(playlistVideo);
                     await dbContext.SaveChangesAsync();
                 }
@@ -278,7 +273,7 @@ public class YoutubeService(
         }
         catch (Exception e)
         {
-            logger.LogError($"Error while saving videos: {e.Message}");
+            logger.Error($"Error while saving videos: {e.Message}");
         }
     }
 }

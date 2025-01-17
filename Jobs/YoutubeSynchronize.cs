@@ -1,8 +1,9 @@
 using YoutubeApiSyncronize.Services;
+using ILogger = Serilog.ILogger;
 
 namespace YoutubeApiSyncronize.Jobs;
 
-public class YoutubeSynchronize(IServiceScopeFactory scopeFactory, ILogger<YoutubeSynchronize> logger)
+public class YoutubeSynchronize(IServiceScopeFactory scopeFactory, ILogger logger)
     : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -11,13 +12,14 @@ public class YoutubeSynchronize(IServiceScopeFactory scopeFactory, ILogger<Youtu
         {
             try
             {
+                logger.Information("Synchronizing job starting...");
                 var delay = CalculateDuration();
                 await Task.Delay(delay, stoppingToken);
                 await SyncAsync();
             }
             catch (OperationCanceledException ex)
             {
-                logger.LogError("Cancelling background job, {Message}", ex.Message);
+                logger.Error("Cancelling background job, {Message}", ex.Message);
             }
         }
     }
@@ -46,7 +48,7 @@ public class YoutubeSynchronize(IServiceScopeFactory scopeFactory, ILogger<Youtu
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Synchronization failed: {Message}", ex.Message);
+            logger.Error(ex, "Synchronization failed: {Message}", ex.Message);
         }
     }
 }
