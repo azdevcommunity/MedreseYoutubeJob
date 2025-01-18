@@ -10,7 +10,7 @@ ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 
 # Copy the .csproj file and restore dependencies
-COPY YoutubeApiSyncronize.csproj ./
+COPY YoutubeApiSynchronize.csproj ./
 RUN dotnet restore "YoutubeApiSynchronize.csproj"
 
 # Copy the rest of the application code and build
