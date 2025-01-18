@@ -1,4 +1,4 @@
-namespace YoutubeApiSyncronize.Options;
+namespace YoutubeApiSynchronize.Options;
 
 public class YoutubeConfig
 {

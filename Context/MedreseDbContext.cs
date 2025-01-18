@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using YoutubeApiSyncronize.Entity;
+using YoutubeApiSynchronize.Entity;
 
-namespace YoutubeApiSyncronize.Context;
+namespace YoutubeApiSynchronize.Context;
 
 public class MedreseDbContext : DbContext
 {

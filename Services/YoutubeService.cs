@@ -2,12 +2,12 @@ using Google.Apis.Services;
 using Google.Apis.YouTube.v3;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using YoutubeApiSyncronize.Context;
-using YoutubeApiSyncronize.Entity;
-using YoutubeApiSyncronize.Options;
+using YoutubeApiSynchronize.Context;
+using YoutubeApiSynchronize.Entity;
+using YoutubeApiSynchronize.Options;
 using ILogger = Serilog.ILogger;
 
-namespace YoutubeApiSyncronize.Services;
+namespace YoutubeApiSynchronize.Services;
 
 public class YoutubeService(
     MedreseDbContext dbContext,

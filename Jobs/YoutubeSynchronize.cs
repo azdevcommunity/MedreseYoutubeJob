@@ -1,7 +1,7 @@
-using YoutubeApiSyncronize.Services;
+using YoutubeApiSynchronize.Services;
 using ILogger = Serilog.ILogger;
 
-namespace YoutubeApiSyncronize.Jobs;
+namespace YoutubeApiSynchronize.Jobs;
 
 public class YoutubeSynchronize(IServiceScopeFactory scopeFactory, ILogger logger)
     : BackgroundService

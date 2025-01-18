@@ -1,14 +1,19 @@
 using System.Net.Mime;
 using Microsoft.AspNetCore.HttpLogging;
+using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
-using YoutubeApiSyncronize.Context;
-using YoutubeApiSyncronize.Jobs;
-using YoutubeApiSyncronize.Options;
-using YoutubeApiSyncronize.Services;
+using YoutubeApiSynchronize.Context;
+using YoutubeApiSynchronize.Jobs;
+using YoutubeApiSynchronize.Options;
+using YoutubeApiSynchronize.Services;
+using YoutubeApiSynchronize.Util;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    options.Conventions.Add(new RouteTokenTransformerConvention(new KebabCaseParameterTransformer()));
+});
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
  

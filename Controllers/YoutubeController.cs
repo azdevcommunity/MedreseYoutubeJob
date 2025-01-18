@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
-using YoutubeApiSyncronize.Services;
+using YoutubeApiSynchronize.Services;
 
-namespace YoutubeApiSyncronize.Controllers;
+namespace YoutubeApiSynchronize.Controllers;
 
 [ApiController]
 [Route("/api/[controller]")]

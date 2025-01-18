@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace YoutubeApiSyncronize.Entity;
+namespace YoutubeApiSynchronize.Entity;
 
 [Table("videos")]
 public class Video
