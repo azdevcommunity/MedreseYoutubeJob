@@ -11,19 +11,19 @@ WORKDIR /src
 
 # Copy the .csproj file and restore dependencies
 COPY YoutubeApiSyncronize.csproj ./
-RUN dotnet restore "YoutubeApiSyncronize.csproj"
+RUN dotnet restore "YoutubeApiSynchronize.csproj"
 
 # Copy the rest of the application code and build
 COPY . .
-RUN dotnet build "YoutubeApiSyncronize.csproj" -c $BUILD_CONFIGURATION -o /app/build
+RUN dotnet build "YoutubeApiSynchronize.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 # Publish stage
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "YoutubeApiSyncronize.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "YoutubeApiSynchronize.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 # Final runtime image
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "YoutubeApiSyncronize.dll"]
+ENTRYPOINT ["dotnet", "YoutubeApiSynchronize.dll"]
