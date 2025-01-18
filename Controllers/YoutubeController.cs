@@ -9,13 +9,34 @@ public class YoutubeController
     : ControllerBase
 {
     private readonly YoutubeService _youtubeService;
+    private readonly IConfiguration _configuration;
 
-    public YoutubeController(YoutubeService youtubeService)
+    public YoutubeController(YoutubeService youtubeService, IConfiguration configuration)
     {
         _youtubeService = youtubeService;
+        _configuration = configuration;
     }
 
-    
+
+    [HttpGet("/env")]
+    public IActionResult GetEnv()
+    {
+        return Ok(_configuration.GetConnectionString("Postgres"));
+    }
+
+
+    [HttpGet("/video-db/{videoId}")]
+    public async Task<IActionResult> GetVideoFromDb(string videoId)
+    {
+        return Ok(await _youtubeService.GetVideoFromDb(videoId));
+    }
+
+    [HttpGet("/video-ytb/{videoId}")]
+    public async Task<IActionResult> GetVideoFromYoutube(string videoId)
+    {
+        return Ok(await _youtubeService.GetVideoFromYoutube(videoId));
+    }
+
     [HttpPost("sync")]
     public async Task<IActionResult> SyncYouTubeData()
     {

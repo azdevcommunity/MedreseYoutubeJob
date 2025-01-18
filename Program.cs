@@ -16,13 +16,14 @@ builder.Services.AddControllers(options =>
 });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
- 
+
 builder.Services.AddDbContext<MedreseDbContext>(options =>
 {
-    var configuration = builder.Configuration;
-    options.UseNpgsql(
-        $"Host={configuration["DATABASE_HOST"]};Port={configuration["DATABASE_PORT"]};Database={configuration["DATABASE_NAME"]};Username={configuration["DATABASE_USERNAME"]};Password={configuration["DATABASE_PASSWORD"]}"
-    );
+    // var configuration = builder.Configuration;
+    // options.UseNpgsql(
+    //     $"Host={configuration["DATABASE_HOST"]};Port={configuration["DATABASE_PORT"]};Database={configuration["DATABASE_NAME"]};Username={configuration["DATABASE_USERNAME"]};Password={configuration["DATABASE_PASSWORD"]}"
+    // );
+    options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres"));
 });
 builder.Services.AddScoped<YoutubeService>();
 builder.Services.AddHostedService<YoutubeSynchronize>();
@@ -36,6 +37,7 @@ builder.Services.AddHttpLogging(logging =>
     logging.RequestBodyLogLimit = 4096;
     logging.ResponseBodyLogLimit = 4096;
 });
+
 builder.Host.UseSerilog((context, serilogServices, configuration) =>
 {
     configuration

@@ -20,8 +20,6 @@ public class YoutubeService(
         ApplicationName = "YouTubePlaylistFetcher"
     });
 
-
-    
     
     public async Task<object> SyncAsync()
     {
@@ -91,7 +89,7 @@ public class YoutubeService(
         do
         {
             var request = _youtubeService.Playlists.List("snippet");
-            request.ChannelId = youtubeConfig.Value.ChannelID; // Replace with your channel ID
+            request.ChannelId = youtubeConfig.Value.ChannelID;
             request.MaxResults = 50;
             request.PageToken = nextPageToken;
 
@@ -275,5 +273,19 @@ public class YoutubeService(
         {
             logger.Error($"Error while saving videos: {e.Message}");
         }
+    }
+
+    public async Task<Video?> GetVideoFromDb(string videoId)
+    {
+        return await dbContext.Videos.FirstOrDefaultAsync(x=>x.VideoId == videoId);
+    }
+
+    public async Task<object?> GetVideoFromYoutube(string videoId)
+    {
+        var videoRequest = _youtubeService.Videos.List("statistics");
+        videoRequest.Id = videoId;
+
+        var response = await videoRequest.ExecuteAsync();
+        return response;
     }
 }
