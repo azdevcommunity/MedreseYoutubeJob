@@ -19,11 +19,10 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContext<MedreseDbContext>(options =>
 {
-    // var configuration = builder.Configuration;
-    // options.UseNpgsql(
-    //     $"Host={configuration["DATABASE_HOST"]};Port={configuration["DATABASE_PORT"]};Database={configuration["DATABASE_NAME"]};Username={configuration["DATABASE_USERNAME"]};Password={configuration["DATABASE_PASSWORD"]}"
-    // );
-    options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres"));
+    var configuration = builder.Configuration;
+    options.UseNpgsql(
+        $"Host={configuration["DATABASE_HOST"]};Port={configuration["DATABASE_PORT"]};Database={configuration["DATABASE_NAME"]};Username={configuration["DATABASE_USERNAME"]};Password={configuration["DATABASE_PASSWORD"]}"
+    );
 });
 builder.Services.AddScoped<YoutubeService>();
 builder.Services.AddHostedService<YoutubeSynchronize>();

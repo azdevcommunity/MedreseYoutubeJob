@@ -17,14 +17,6 @@ public class YoutubeController
         _configuration = configuration;
     }
 
-
-    [HttpGet("/env")]
-    public IActionResult GetEnv()
-    {
-        return Ok(_configuration.GetConnectionString("Postgres"));
-    }
-
-
     [HttpGet("/video-db/{videoId}")]
     public async Task<IActionResult> GetVideoFromDb(string videoId)
     {
