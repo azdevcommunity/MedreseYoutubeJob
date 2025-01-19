@@ -10,6 +10,7 @@ using YoutubeApiSynchronize.Services;
 using YoutubeApiSynchronize.Util;
 
 var builder = WebApplication.CreateBuilder(args);
+ 
 builder.Services.AddControllers(options =>
 {
     options.Conventions.Add(new RouteTokenTransformerConvention(new KebabCaseParameterTransformer()));
@@ -19,9 +20,9 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContext<MedreseDbContext>(options =>
 {
-    var configuration = builder.Configuration;
+    var db = builder.Configuration.GetSection("DB").Get<DatabaseSettings>()!;
     options.UseNpgsql(
-        $"Host={configuration["DATABASE_HOST"]};Port={configuration["DATABASE_PORT"]};Database={configuration["DATABASE_NAME"]};Username={configuration["DATABASE_USERNAME"]};Password={configuration["DATABASE_PASSWORD"]}"
+        $"Host={db.Host};Port={db.Port};Database={db.Name};Username={db.Username};Password={db.Password}"
     );
 });
 builder.Services.AddScoped<YoutubeService>();

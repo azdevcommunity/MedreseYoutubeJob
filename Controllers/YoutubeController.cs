@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using YoutubeApiSynchronize.Options;
 using YoutubeApiSynchronize.Services;
 
 namespace YoutubeApiSynchronize.Controllers;
@@ -15,6 +16,21 @@ public class YoutubeController
     {
         _youtubeService = youtubeService;
         _configuration = configuration;
+    }
+
+    [HttpGet("env")]
+    public IActionResult GetEnv()
+    {
+        var db = _configuration.GetSection("DB").Get<DatabaseSettings>()!;
+
+        return Ok(
+            new
+            {
+                TestValue = _configuration["Test:Value"],
+                ConnectionString =
+                    $"Host={db.Host};Port={db.Port};Database={db.Name};Username={db.Username};Password={db.Password}"
+            }
+        );
     }
 
     [HttpGet("/video-db/{videoId}")]
