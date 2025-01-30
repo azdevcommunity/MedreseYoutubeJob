@@ -227,17 +227,16 @@ public class YoutubeService(
                 await dbContext.SaveChangesAsync();
             }
 
-            if (!dbContext.PlaylistVideos.Any(v => v.VideoId == video.VideoId && v.PlaylistId == playlist.PlaylistId))
+            if (dbContext.PlaylistVideos.Any(v => v.VideoId == video.VideoId && v.PlaylistId == playlist.PlaylistId))
+                continue;
+            PlaylistVideo playlistVideo = new()
             {
-                PlaylistVideo playlistVideo = new()
-                {
-                    PlaylistId = playlist.PlaylistId,
-                    VideoId = video.VideoId,
-                };
+                PlaylistId = playlist.PlaylistId,
+                VideoId = video.VideoId,
+            };
 
-                dbContext.PlaylistVideos.Add(playlistVideo);
-                await dbContext.SaveChangesAsync();
-            }
+            dbContext.PlaylistVideos.Add(playlistVideo);
+            await dbContext.SaveChangesAsync();
         }
     }
 
@@ -245,28 +244,26 @@ public class YoutubeService(
     {
         try
         {
-            int maxSearchResults = 50;
+            var maxSearchResults = 50;
 
             (List<Video> videos, List<PlaylistVideo> playlistVideos) tuple = await SearchVideosAsync(maxSearchResults);
 
-            foreach (var video in tuple.videos)
+            var videos = tuple.videos.Where(video => !dbContext.Videos.Any(v => v.VideoId == video.VideoId));
+           
+            foreach (var video in videos)
             {
-                if (!dbContext.Videos.Any(v => v.VideoId == video.VideoId))
-                {
-                    logger.Information($"Saving video: {video.VideoId}");
-                    dbContext.Videos.Add(video);
-                    await dbContext.SaveChangesAsync();
-                }
+                logger.Information($"Saving video: {video.VideoId}");
+                dbContext.Videos.Add(video);
+                await dbContext.SaveChangesAsync();
             }
 
-            foreach (var playlistVideo in tuple.playlistVideos)
+            var playlistVideos = tuple.playlistVideos.Where(playlistVideo => !dbContext.PlaylistVideos.Any(v =>
+                v.VideoId == playlistVideo.VideoId && v.PlaylistId == playlistVideo.PlaylistId));
+            
+            foreach (var playlistVideo in playlistVideos)
             {
-                if (!dbContext.PlaylistVideos.Any(v =>
-                        v.VideoId == playlistVideo.VideoId && v.PlaylistId == playlistVideo.PlaylistId))
-                {
-                    dbContext.PlaylistVideos.Add(playlistVideo);
-                    await dbContext.SaveChangesAsync();
-                }
+                dbContext.PlaylistVideos.Add(playlistVideo);
+                await dbContext.SaveChangesAsync();
             }
         }
         catch (Exception e)

@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace YoutubeApiSynchronize.Util;
+namespace YoutubeApiSynchronize.Attributes;
 
 public class KebabCaseParameterTransformer : IOutboundParameterTransformer
 {
