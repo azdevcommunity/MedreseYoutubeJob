@@ -16,28 +16,28 @@ public class LoggingConfig(IOptions<LogOptions> logOptions)
             var env = builder.Configuration["ASPNETCORE_ENVIRONMENT"] ?? "Development";
             var hostname = builder.Configuration["HOSTNAME"] ?? "localhost";
             configuration
-                .Enrich.WithProperty("app", "youtube-job-api")
-                .Enrich.WithProperty("env", env)
-                .Enrich.WithProperty("host", hostname)
+                // .Enrich.WithProperty("app", "youtube-job-api")
+                // .Enrich.WithProperty("env", env)
+                // .Enrich.WithProperty("host", hostname)
                 .WriteTo.Console()
-                .WriteTo.GrafanaLoki(logOptions.Value.Loki,
-                [
-                    new LokiLabel
-                    {
-                        Key = "app",
-                        Value = "youtube-job-api"
-                    },
-                    new LokiLabel
-                    {
-                        Key = "env",
-                        Value = env
-                    },
-                    new LokiLabel
-                    {
-                        Key = "host",
-                        Value = hostname
-                    }
-                ])
+                // .WriteTo.GrafanaLoki(logOptions.Value.Loki,
+                // [
+                //     new LokiLabel
+                //     {
+                //         Key = "app",
+                //         Value = "youtube-job-api"
+                //     },
+                //     new LokiLabel
+                //     {
+                //         Key = "env",
+                //         Value = env
+                //     },
+                //     new LokiLabel
+                //     {
+                //         Key = "host",
+                //         Value = hostname
+                //     }
+                // ])
                 .ReadFrom.Services(serilogServices)
                 .Enrich.FromLogContext();
         });
