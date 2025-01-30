@@ -19,7 +19,7 @@ public class YoutubeSynchronize(IServiceScopeFactory scopeFactory, ILogger logge
             }
             catch (OperationCanceledException ex)
             {
-                logger.Error("Cancelling background job, {Message}", ex.Message);
+                logger.Error(ex,"Cancelling background job, {Message}", ex.Message);
             }
         }
     }
