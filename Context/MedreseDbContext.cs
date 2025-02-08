@@ -3,14 +3,13 @@ using YoutubeApiSynchronize.Entity;
 
 namespace YoutubeApiSynchronize.Context;
 
-public class MedreseDbContext : DbContext
+public class MedreseDbContext(DbContextOptions<MedreseDbContext> options, IConfiguration configuration)
+    : DbContext(options)
 {
     public DbSet<Playlist> Playlists { get; set; }
     public DbSet<Video> Videos { get; set; }
 
     public DbSet<PlaylistVideo> PlaylistVideos { get; set; }
-    
-    public MedreseDbContext(DbContextOptions<MedreseDbContext> options) : base(options) { }
 
     // protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     // {
@@ -23,5 +22,6 @@ public class MedreseDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.HasDefaultSchema(configuration["DB:SCHEME"]);
     }
 }
