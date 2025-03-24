@@ -20,7 +20,7 @@ public class YoutubeService(
         ApplicationName = "YouTubePlaylistFetcher"
     });
 
-    
+
     public async Task<object> SyncAsync()
     {
         try
@@ -132,6 +132,11 @@ public class YoutubeService(
             var response = await request.ExecuteAsync();
             if (response.Items.Any())
             {
+                if (response.Items.Any(x => x.Snippet.ResourceId.VideoId == "TmtEiWn3HMY"))
+                {
+                    var a = response.Items.FirstOrDefault(x => x.Snippet.ResourceId.VideoId == "TmtEiWn3HMY");
+                }
+
                 videos.AddRange(response.Items
                     .Where(item => item.Snippet != null && item.Snippet.ResourceId != null)
                     .Select(item => new Video
@@ -142,7 +147,8 @@ public class YoutubeService(
                             item.Snippet.Thumbnails?.Default__?.Url ?? string.Empty,
                             item.Snippet.Thumbnails?.Medium?.Url ?? string.Empty,
                             item.Snippet.Thumbnails?.High?.Url ?? string.Empty),
-                        PublishedAt = DateTimeOffset.Parse(item.Snippet.PublishedAtRaw)
+                        PublishedAt = DateTimeOffset.Parse(item.Snippet.PublishedAtRaw),
+                        IsPrivate = item.Snippet.Title =="Private video" || item.Snippet.Description == "This video is private."
                     }));
             }
 
@@ -172,6 +178,11 @@ public class YoutubeService(
                 foreach (var searchResult in response.Items
                              .Where(item => item.Snippet != null))
                 {
+                    if (searchResult.Id.VideoId == "TmtEiWn3HMY")
+                    {
+                        Console.WriteLine("dasda");
+                    }
+
                     var newVideo = new Video
                     {
                         VideoId = searchResult.Id.VideoId,
@@ -179,7 +190,8 @@ public class YoutubeService(
                         Thumbnail = searchResult.Snippet.Thumbnails.Default__.Url + "+" +
                                     searchResult.Snippet.Thumbnails.Medium.Url + "+" +
                                     searchResult.Snippet.Thumbnails.High.Url,
-                        PublishedAt = DateTimeOffset.Parse(searchResult.Snippet.PublishedAtRaw)
+                        PublishedAt = DateTimeOffset.Parse(searchResult.Snippet.PublishedAtRaw),
+                        IsPrivate = searchResult.Snippet.Title =="Private video" || searchResult.Snippet.Description == "This video is private."
                     };
 
                     PlaylistVideo playlistVideo = new()
@@ -249,7 +261,7 @@ public class YoutubeService(
             (List<Video> videos, List<PlaylistVideo> playlistVideos) tuple = await SearchVideosAsync(maxSearchResults);
 
             var videos = tuple.videos.Where(video => !dbContext.Videos.Any(v => v.VideoId == video.VideoId));
-           
+
             foreach (var video in videos)
             {
                 logger.Information($"Saving video: {video.VideoId}");
@@ -259,7 +271,7 @@ public class YoutubeService(
 
             var playlistVideos = tuple.playlistVideos.Where(playlistVideo => !dbContext.PlaylistVideos.Any(v =>
                 v.VideoId == playlistVideo.VideoId && v.PlaylistId == playlistVideo.PlaylistId));
-            
+
             foreach (var playlistVideo in playlistVideos)
             {
                 dbContext.PlaylistVideos.Add(playlistVideo);
@@ -274,13 +286,13 @@ public class YoutubeService(
 
     public async Task<Video?> GetVideoFromDb(string videoId)
     {
-        return await dbContext.Videos.FirstOrDefaultAsync(x=>x.VideoId == videoId);
+        return await dbContext.Videos.FirstOrDefaultAsync(x => x.VideoId == videoId);
     }
 
     public async Task<object?> GetVideoFromYoutube(string videoId)
     {
-        var videoRequest = _youtubeService.Videos.List("statistics");
-        videoRequest.Id = videoId;
+        var videoRequest = _youtubeService.Videos.List("snippet");
+        videoRequest.Id = "TmtEiWn3HMY";
 
         var response = await videoRequest.ExecuteAsync();
         return response;

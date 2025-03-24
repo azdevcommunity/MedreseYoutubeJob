@@ -22,4 +22,6 @@ public class Video
     [Column("thumbnail")]
     public string Thumbnail { get; set; } 
     
+    [Column("is_private")]
+    public bool? IsPrivate { get; set; } = false;
 }

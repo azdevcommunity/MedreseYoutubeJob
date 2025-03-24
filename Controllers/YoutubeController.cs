@@ -27,8 +27,7 @@ public class YoutubeController
             new
             {
                 TestValue = _configuration["Test:Value"],
-                ConnectionString =
-                    $"Host={db.Host};Port={db.Port};Database={db.Name};Username={db.Username};Password={db.Password}"
+                db.ConnectionString,
             }
         );
     }

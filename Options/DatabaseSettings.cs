@@ -7,4 +7,6 @@ public class DatabaseSettings
     public string Password { get; set; }
     public int Port { get; set; }
     public string Name { get; set; }
+    
+    public string ConnectionString => $"Host={Host};Port={Port};Database={Name};Username={Username};Password={Password}";
 }
