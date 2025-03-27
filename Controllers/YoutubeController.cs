@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Renci.SshNet;
 using YoutubeApiSynchronize.Options;
 using YoutubeApiSynchronize.Services;
 
@@ -56,4 +57,31 @@ public class YoutubeController
             return StatusCode(429, new { Message = ex.Message });
         }
     }
+
+
+    [HttpPost("jenkins/{status}")]
+    public IActionResult TurnJenkins(int status)
+    {
+        using var client = new SshClient(_configuration["SERVER_HOST"], _configuration["SERVER_USER_NAME"], _configuration["SERVER_PASSWORD"]);
+        client.Connect();
+
+        if (status == 1)
+        {
+            Console.WriteLine("Starting Jenkins...");
+            client.RunCommand("sudo systemctl start jenkins");
+        }
+        else if (status == 0)
+        {
+            Console.WriteLine("Stopping Jenkins...");
+            client.RunCommand("sudo systemctl stop jenkins");
+        }
+        else
+        {
+            return BadRequest("Geçersiz parametre. Sadece 0 veya 1 olmalı.");
+        }
+
+        client.Disconnect();
+        return Ok(new { message = $"Jenkins {(status == 1 ? "başlatıldı" : "durduruldu")}" });
+    }
+    
 }
