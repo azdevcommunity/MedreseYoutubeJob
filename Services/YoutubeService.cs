@@ -57,6 +57,7 @@ public class YoutubeService(
         }
         catch (Exception e)
         {
+            logger.Error(e.StackTrace, "An error occurred during synchronization.");
             logger.Error(e, "An error occurred during ProcessPlaylistsAndVideos.");
         }
     }
@@ -103,9 +104,11 @@ public class YoutubeService(
                     {
                         PlaylistId = item.Id,
                         Title = item.Snippet.Title,
-                        Thumbnail = item.Snippet.Thumbnails.Default__.Url + "+" +
-                                    item.Snippet.Thumbnails.Medium.Url + "+" +
-                                    item.Snippet.Thumbnails.High.Url,
+                        Thumbnail = string.Join("+",
+                            item.Snippet.Thumbnails?.Default__?.Url ?? string.Empty,
+                            item.Snippet.Thumbnails?.Medium?.Url ?? string.Empty,
+                            item.Snippet.Thumbnails?.High?.Url ?? string.Empty,
+                            item.Snippet.Thumbnails?.Maxres?.Url ?? item.Snippet.Thumbnails?.High?.Url ?? string.Empty),
                         PublishedAt = DateTimeOffset.Parse(item.Snippet.PublishedAtRaw)
                     }));
             }
@@ -146,9 +149,11 @@ public class YoutubeService(
                         Thumbnail = string.Join("+",
                             item.Snippet.Thumbnails?.Default__?.Url ?? string.Empty,
                             item.Snippet.Thumbnails?.Medium?.Url ?? string.Empty,
-                            item.Snippet.Thumbnails?.High?.Url ?? string.Empty),
+                            item.Snippet.Thumbnails?.High?.Url ?? string.Empty,
+                            item.Snippet.Thumbnails?.Maxres?.Url ?? item.Snippet.Thumbnails?.High?.Url ?? string.Empty),
                         PublishedAt = DateTimeOffset.Parse(item.Snippet.PublishedAtRaw),
-                        IsPrivate = item.Snippet.Title =="Private video" || item.Snippet.Description == "This video is private."
+                        IsPrivate = item.Snippet.Title == "Private video" ||
+                                    item.Snippet.Description == "This video is private."
                     }));
             }
 
@@ -187,11 +192,14 @@ public class YoutubeService(
                     {
                         VideoId = searchResult.Id.VideoId,
                         Title = searchResult.Snippet.Title,
-                        Thumbnail = searchResult.Snippet.Thumbnails.Default__.Url + "+" +
-                                    searchResult.Snippet.Thumbnails.Medium.Url + "+" +
-                                    searchResult.Snippet.Thumbnails.High.Url,
+                        Thumbnail = string.Join("+",
+                            searchResult.Snippet.Thumbnails?.Default__?.Url ?? string.Empty,
+                            searchResult.Snippet.Thumbnails?.Medium?.Url ?? string.Empty,
+                            searchResult.Snippet.Thumbnails?.High?.Url ?? string.Empty,
+                            searchResult.Snippet.Thumbnails?.Maxres.Url ?? string.Empty),
                         PublishedAt = DateTimeOffset.Parse(searchResult.Snippet.PublishedAtRaw),
-                        IsPrivate = searchResult.Snippet.Title =="Private video" || searchResult.Snippet.Description == "This video is private."
+                        IsPrivate = searchResult.Snippet.Title == "Private video" ||
+                                    searchResult.Snippet.Description == "This video is private."
                     };
 
                     PlaylistVideo playlistVideo = new()
