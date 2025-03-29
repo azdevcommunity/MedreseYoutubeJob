@@ -24,4 +24,10 @@ public class Video
     
     [Column("is_private")]
     public bool? IsPrivate { get; set; } = false;
+    
+    [Column("is_short")]
+    public bool? IsShort { get; set; } = false;
+    
+    [Column("description")]
+    public string? Description { get; set; }
 }

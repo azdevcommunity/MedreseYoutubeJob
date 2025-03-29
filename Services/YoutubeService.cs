@@ -12,7 +12,8 @@ namespace YoutubeApiSynchronize.Services;
 public class YoutubeService(
     MedreseDbContext dbContext,
     ILogger logger,
-    IOptions<YoutubeConfig> youtubeConfig)
+    IOptions<YoutubeConfig> youtubeConfig,
+    IOptions<ShortPlaylistsOptions> shortPlaylistsOptions)
 {
     private readonly YouTubeService _youtubeService = new(new BaseClientService.Initializer
     {
@@ -135,9 +136,16 @@ public class YoutubeService(
             var response = await request.ExecuteAsync();
             if (response.Items.Any())
             {
-                if (response.Items.Any(x => x.Snippet.ResourceId.VideoId == "TmtEiWn3HMY"))
+                if (response.Items.Any(x => x.Snippet.ResourceId.VideoId == "Eg5RrRFVrbg"))
                 {
-                    var a = response.Items.FirstOrDefault(x => x.Snippet.ResourceId.VideoId == "TmtEiWn3HMY");
+                    //normal
+                    var a = response.Items.FirstOrDefault(x => x.Snippet.ResourceId.VideoId == "Eg5RrRFVrbg");
+                }
+
+                if (response.Items.Any(x => x.Snippet.ResourceId.VideoId == "rB8NWK4QK14"))
+                {
+                    //short
+                    var a = response.Items.FirstOrDefault(x => x.Snippet.ResourceId.VideoId == "rB8NWK4QK14");
                 }
 
                 videos.AddRange(response.Items
@@ -153,7 +161,9 @@ public class YoutubeService(
                             item.Snippet.Thumbnails?.Maxres?.Url ?? item.Snippet.Thumbnails?.High?.Url ?? string.Empty),
                         PublishedAt = DateTimeOffset.Parse(item.Snippet.PublishedAtRaw),
                         IsPrivate = item.Snippet.Title == "Private video" ||
-                                    item.Snippet.Description == "This video is private."
+                                    item.Snippet.Description == "This video is private.",
+                        IsShort = IsVideoShort(item.Snippet.ResourceId.VideoId, playlistId, item.Snippet.Description),
+                        Description = string.IsNullOrEmpty(item.Snippet.Description) ? null : item.Snippet.Description,
                     }));
             }
 
@@ -183,9 +193,16 @@ public class YoutubeService(
                 foreach (var searchResult in response.Items
                              .Where(item => item.Snippet != null))
                 {
-                    if (searchResult.Id.VideoId == "TmtEiWn3HMY")
+                    if (searchResult.Id.VideoId == "Eg5RrRFVrbg")
                     {
-                        Console.WriteLine("dasda");
+                        //normal
+                        var a = searchResult;
+                    }
+
+                    if (searchResult.Id.VideoId == "rB8NWK4QK14")
+                    {
+                        //short
+                        var a = searchResult;
                     }
 
                     var newVideo = new Video
@@ -196,16 +213,22 @@ public class YoutubeService(
                             searchResult.Snippet.Thumbnails?.Default__?.Url ?? string.Empty,
                             searchResult.Snippet.Thumbnails?.Medium?.Url ?? string.Empty,
                             searchResult.Snippet.Thumbnails?.High?.Url ?? string.Empty,
-                            searchResult.Snippet.Thumbnails?.Maxres.Url ?? string.Empty),
+                            searchResult.Snippet.Thumbnails?.Maxres?.Url ??
+                            searchResult.Snippet.Thumbnails?.High?.Url ?? string.Empty),
                         PublishedAt = DateTimeOffset.Parse(searchResult.Snippet.PublishedAtRaw),
                         IsPrivate = searchResult.Snippet.Title == "Private video" ||
-                                    searchResult.Snippet.Description == "This video is private."
+                                    searchResult.Snippet.Description == "This video is private.",
+                        IsShort = IsVideoShort(searchResult.Id.VideoId, searchResult.Id.PlaylistId,
+                            searchResult.Snippet.Description),
+                        Description = string.IsNullOrEmpty(searchResult.Snippet.Description)
+                            ? null
+                            : searchResult.Snippet.Description,
                     };
 
                     PlaylistVideo playlistVideo = new()
                     {
-                        PlaylistId = newVideo.VideoId ?? string.Empty,
-                        VideoId = searchResult.Id.PlaylistId ?? string.Empty,
+                        VideoId = newVideo.VideoId ?? string.Empty,
+                        PlaylistId = searchResult.Id.PlaylistId ?? string.Empty,
                     };
 
                     videos.Add(newVideo);
@@ -292,6 +315,31 @@ public class YoutubeService(
         }
     }
 
+    private bool IsVideoShort(string? videoId, string playlistId, string? description)
+    {
+        if (videoId == "exGyJATCqVY")
+        {
+            Console.WriteLine("da");
+        }
+        if (string.IsNullOrWhiteSpace(description))
+            return true;
+
+        var shortPlaylist = shortPlaylistsOptions.Value.ShortPlaylists?
+            .FirstOrDefault(p => p.PlaylistId == playlistId);
+
+        if (shortPlaylist == null)
+        {
+            return false;
+        }
+
+        // Playlist tapılmayıbsa və ya exceptional list boşdursa → qısadır
+        if (shortPlaylist.ExceptionalVideos == null || shortPlaylist.ExceptionalVideos.Count == 0)
+            return true;
+
+        // Playlistdə həmin video varsa → qısadır, yoxdursa → uzun
+        return videoId != null && !shortPlaylist.ExceptionalVideos.Contains(videoId);
+    }
+
     public async Task<Video?> GetVideoFromDb(string videoId)
     {
         return await dbContext.Videos.FirstOrDefaultAsync(x => x.VideoId == videoId);
@@ -299,10 +347,41 @@ public class YoutubeService(
 
     public async Task<object?> GetVideoFromYoutube(string videoId)
     {
-        var videoRequest = _youtubeService.Videos.List("snippet");
-        videoRequest.Id = "TmtEiWn3HMY";
+        #region MyRegion
 
-        var response = await videoRequest.ExecuteAsync();
-        return response;
+        var request = _youtubeService.Search.List("snippet");
+        request.Type = "video";
+        request.MaxResults = 5;
+        request.PageToken = "CAUQAA";
+        request.ChannelId = youtubeConfig.Value.ChannelID;
+
+        var response = await request.ExecuteAsync();
+
+        foreach (var searchResult in response.Items
+                     .Where(item => item.Snippet != null))
+        {
+            if (searchResult.Id.VideoId == "TmtEiWn3HMY")
+            {
+                Console.WriteLine("dasda");
+            }
+        }
+
+        #endregion
+
+
+        var request2 = _youtubeService.PlaylistItems.List("snippet");
+        request2.PlaylistId = "PLU43-RoCoSfPdyhCm8wG54l0DwYOuiTaa";
+        request2.MaxResults = 1;
+        request2.PageToken = null;
+
+        var response2 = await request.ExecuteAsync();
+
+
+        return new
+        {
+            response.NextPageToken,
+            Search = response.Items,
+            Elman = response2.Items
+        };
     }
 }

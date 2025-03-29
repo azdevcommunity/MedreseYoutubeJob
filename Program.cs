@@ -3,7 +3,7 @@ using YoutubeApiSynchronize.Configuration;
 using YoutubeApiSynchronize.Jobs;
 using YoutubeApiSynchronize.Options;
 using YoutubeApiSynchronize.Services;
- 
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,7 +16,8 @@ builder.Services.AddScoped<YoutubeService>();
 builder.Services.Configure<YoutubeConfig>(builder.Configuration.GetSection("YoutubeConfig"));
 builder.Services.Configure<LogOptions>(builder.Configuration.GetSection("LogConfig"));
 builder.Services.AddHealthChecks();
-
+builder.Services.Configure<ShortPlaylistsOptions>(
+    builder.Configuration.GetSection(nameof(ShortPlaylistsOptions)));
 builder.LoadConfiguration(new List<Assembly> { Assembly.GetExecutingAssembly() });
 
 
