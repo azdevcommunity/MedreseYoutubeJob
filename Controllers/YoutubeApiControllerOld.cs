@@ -116,16 +116,16 @@
 //
 //         do
 //         {
-//             var request = _youtubeService.Playlists.List("snippet");
-//             request.ChannelId = ChannelId; // Replace with your channel ID
-//             request.MaxResults = 50;
-//             request.PageToken = nextPageToken;
+//             var Request = _youtubeService.Playlists.List("snippet");
+//             Request.ChannelId = ChannelId; // Replace with your channel ID
+//             Request.MaxResults = 50;
+//             Request.PageToken = nextPageToken;
 //
-//             var response = await request.ExecuteAsync();
+//             var Response = await Request.ExecuteAsync();
 //
-//             if (response.Items.Any())
+//             if (Response.Items.Any())
 //             {
-//                 playlists.AddRange(response.Items
+//                 playlists.AddRange(Response.Items
 //                     .Where(item => item.Snippet != null)
 //                     .Select(item => new Playlist
 //                     {
@@ -139,7 +139,7 @@
 //             }
 //
 //
-//             nextPageToken = response.NextPageToken;
+//             nextPageToken = Response.NextPageToken;
 //         } while (!string.IsNullOrEmpty(nextPageToken));
 //
 //         return playlists;
@@ -152,15 +152,15 @@
 //
 //         do
 //         {
-//             var request = _youtubeService.PlaylistItems.List("snippet");
-//             request.PlaylistId = playlistId;
-//             request.MaxResults = 50;
-//             request.PageToken = nextPageToken;
+//             var Request = _youtubeService.PlaylistItems.List("snippet");
+//             Request.PlaylistId = playlistId;
+//             Request.MaxResults = 50;
+//             Request.PageToken = nextPageToken;
 //
-//             var response = await request.ExecuteAsync();
-//             if (response.Items.Any())
+//             var Response = await Request.ExecuteAsync();
+//             if (Response.Items.Any())
 //             {
-//                 videos.AddRange(response.Items
+//                 videos.AddRange(Response.Items
 //                     .Where(item => item.Snippet != null && item.Snippet.ResourceId != null)
 //                     .Select(item => new Video
 //                     {
@@ -175,7 +175,7 @@
 //                     }));
 //             }
 //
-//             nextPageToken = response.NextPageToken;
+//             nextPageToken = Response.NextPageToken;
 //         } while (!string.IsNullOrEmpty(nextPageToken));
 //
 //         return videos;
@@ -188,16 +188,16 @@
 //
 //         do
 //         {
-//             var request = _youtubeService.Search.List("snippet");
-//             request.Type = "video";
-//             request.MaxResults = maxResults;
-//             request.PageToken = nextPageToken;
-//             request.ChannelId = ChannelId;
+//             var Request = _youtubeService.Search.List("snippet");
+//             Request.Type = "video";
+//             Request.MaxResults = maxResults;
+//             Request.PageToken = nextPageToken;
+//             Request.ChannelId = ChannelId;
 //
-//             var response = await request.ExecuteAsync();
-//             if (response.Items.Any())
+//             var Response = await Request.ExecuteAsync();
+//             if (Response.Items.Any())
 //             {
-//                 videos.AddRange(response.Items
+//                 videos.AddRange(Response.Items
 //                     .Where(item => item.Snippet != null)
 //                     .Select(item => new Video
 //                     {
@@ -212,7 +212,7 @@
 //             }
 //
 //
-//             nextPageToken = response.NextPageToken;
+//             nextPageToken = Response.NextPageToken;
 //         } while (!string.IsNullOrEmpty(nextPageToken));
 //
 //         return videos;

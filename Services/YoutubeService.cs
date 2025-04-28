@@ -269,6 +269,16 @@ public class YoutubeService(
                 dbContext.Videos.Add(video);
                 await dbContext.SaveChangesAsync();
             }
+            else if (dbContext.Videos.Any(v => v.VideoId == video.VideoId && v.IsPrivate != video.IsPrivate))
+            {
+                Video foundVideo = dbContext.Videos.FirstOrDefault(v => v.VideoId == video.VideoId)!;
+                foundVideo.IsPrivate = video.IsPrivate;
+                foundVideo.Description = video.Description;
+                foundVideo.Thumbnail = video.Thumbnail;
+                foundVideo.PublishedAt = video.PublishedAt;
+                foundVideo.IsShort = video.IsShort;
+                foundVideo.Title = video.Title;
+            }
 
             if (dbContext.PlaylistVideos.Any(v => v.VideoId == video.VideoId && v.PlaylistId == playlist.PlaylistId))
                 continue;

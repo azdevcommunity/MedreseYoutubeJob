@@ -28,6 +28,6 @@ public class Video
     [Column("is_short")]
     public bool? IsShort { get; set; } = false;
     
-    [Column("description")]
+    [Column(name:"description", TypeName = "text")]
     public string? Description { get; set; }
 }
