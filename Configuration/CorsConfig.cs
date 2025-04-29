@@ -9,10 +9,12 @@ public class CorsConfig
     {
         builder.Services.AddCors(options =>
         {
+            string[] corsOrigins = builder.Configuration.GetSection("CorsOrigins").Get<string[]>()
+                                   ?? throw new NullReferenceException();
             options.AddPolicy(name: "CorsPolicy",
                 policy =>
                 {
-                    policy.WithOrigins(builder.Configuration["CorsOrigins"]!)
+                    policy.WithOrigins(corsOrigins)
                         .AllowAnyHeader()
                         .AllowAnyMethod();
                 });
