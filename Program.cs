@@ -28,4 +28,5 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
 app.UseHealthChecks("/api/health");
+app.UseCors("CorsPolicy"); 
 app.Run();
