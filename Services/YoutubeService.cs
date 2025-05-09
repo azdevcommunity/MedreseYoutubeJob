@@ -357,41 +357,47 @@ public class YoutubeService(
 
     public async Task<object?> GetVideoFromYoutube(string videoId)
     {
-        #region MyRegion
-
-        var request = _youtubeService.Search.List("snippet");
-        request.Type = "video";
-        request.MaxResults = 5;
-        request.PageToken = "CAUQAA";
-        request.ChannelId = youtubeConfig.Value.ChannelID;
-
-        var response = await request.ExecuteAsync();
-
-        foreach (var searchResult in response.Items
-                     .Where(item => item.Snippet != null))
-        {
-            if (searchResult.Id.VideoId == "TmtEiWn3HMY")
-            {
-                Console.WriteLine("dasda");
-            }
-        }
-
-        #endregion
-
-
-        var request2 = _youtubeService.PlaylistItems.List("snippet");
-        request2.PlaylistId = "PLU43-RoCoSfPdyhCm8wG54l0DwYOuiTaa";
-        request2.MaxResults = 1;
-        request2.PageToken = null;
-
-        var response2 = await request.ExecuteAsync();
-
-
-        return new
-        {
-            response.NextPageToken,
-            Search = response.Items,
-            Elman = response2.Items
-        };
+        var videoRequest = _youtubeService.Videos.List("snippet");
+        videoRequest.Id = videoId;
+        
+        var response = await videoRequest.ExecuteAsync();
+        return response;
+        
+        // #region MyRegion
+        //
+        // var request = _youtubeService.Search.List("snippet");
+        // request.Type = "video";
+        // request.MaxResults = 5;
+        // request.PageToken = "CAUQAA";
+        // request.ChannelId = youtubeConfig.Value.ChannelID;
+        //
+        // var response = await request.ExecuteAsync();
+        //
+        // foreach (var searchResult in response.Items
+        //              .Where(item => item.Snippet != null))
+        // {
+        //     if (searchResult.Id.VideoId == "TmtEiWn3HMY")
+        //     {
+        //         Console.WriteLine("dasda");
+        //     }
+        // }
+        //
+        // #endregion
+        //
+        //
+        // var request2 = _youtubeService.PlaylistItems.List("snippet");
+        // request2.PlaylistId = "PLU43-RoCoSfPdyhCm8wG54l0DwYOuiTaa";
+        // request2.MaxResults = 1;
+        // request2.PageToken = null;
+        //
+        // var response2 = await request.ExecuteAsync();
+        //
+        //
+        // return new
+        // {
+        //     response.NextPageToken,
+        //     Search = response.Items,
+        //     Elman = response2.Items
+        // };
     }
 }
