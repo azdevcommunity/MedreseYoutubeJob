@@ -1,11 +1,15 @@
 using Google.Apis.Services;
 using Google.Apis.YouTube.v3;
+using Google.Apis.YouTube.v3.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Renci.SshNet.Messages;
 using YoutubeApiSynchronize.Context;
 using YoutubeApiSynchronize.Entity;
 using YoutubeApiSynchronize.Options;
 using ILogger = Serilog.ILogger;
+using Playlist = YoutubeApiSynchronize.Entity.Playlist;
+using Video = YoutubeApiSynchronize.Entity.Video;
 
 namespace YoutubeApiSynchronize.Services;
 
@@ -331,6 +335,7 @@ public class YoutubeService(
         {
             Console.WriteLine("da");
         }
+
         if (string.IsNullOrWhiteSpace(description))
             return true;
 
@@ -359,10 +364,10 @@ public class YoutubeService(
     {
         var videoRequest = _youtubeService.Videos.List("snippet");
         videoRequest.Id = videoId;
-        
+
         var response = await videoRequest.ExecuteAsync();
         return response;
-        
+
         // #region MyRegion
         //
         // var request = _youtubeService.Search.List("snippet");
@@ -399,5 +404,50 @@ public class YoutubeService(
         //     Search = response.Items,
         //     Elman = response2.Items
         // };
+    }
+
+    public async Task<object?> UpdateByVideoId(string videoId)
+    {
+        var videoRequest = _youtubeService.Videos.List("snippet");
+        videoRequest.Id = videoId;
+
+        VideoListResponse? response = await videoRequest.ExecuteAsync();
+        var ytb = response.Items.FirstOrDefault(x => x.Id == videoId);
+
+        if (ytb == null)
+        {
+            return new
+            {
+                Message = "Video not found on youtube"
+            };
+        }
+
+
+        Video? video = dbContext.Videos.FirstOrDefault(v => v.VideoId == videoId);
+
+        if (video == null)
+        {
+            return new
+            {
+                Message = "Video not found on db"
+            };
+        }
+
+        video.Description = ytb.Snippet.Description;
+        video.Thumbnail = string.Join("+",
+            ytb.Snippet.Thumbnails?.Default__?.Url ?? string.Empty,
+            ytb.Snippet.Thumbnails?.Medium?.Url ?? string.Empty,
+            ytb.Snippet.Thumbnails?.High?.Url ?? string.Empty,
+            ytb.Snippet.Thumbnails?.Maxres?.Url ??
+            ytb.Snippet.Thumbnails?.High?.Url ?? string.Empty);
+        video.Title = ytb.Snippet.Title;
+        video.PublishedAt = DateTimeOffset.Parse(ytb.Snippet.PublishedAtRaw);
+        video.IsPrivate = ytb.Snippet.Title == "Private video" ||
+                          ytb.Snippet.Description == "This video is private.";
+        video.Title = video.Title;
+
+        await dbContext.SaveChangesAsync();
+
+        return video;
     }
 }

@@ -44,6 +44,13 @@ public class YoutubeController
     {
         return Ok(await _youtubeService.GetVideoFromYoutube(videoId));
     }
+    
+    
+    [HttpPut("/{videoId}")]
+    public async Task<IActionResult> UpdateByVideoId(string videoId)
+    {
+        return Ok(await _youtubeService.UpdateByVideoId(videoId));
+    }
 
     [HttpPost("sync")]
     public async Task<IActionResult> SyncYouTubeData()
