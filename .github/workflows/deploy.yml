@@ -1,0 +1,142 @@
+name: Build & Deploy (Medrese Job - .NET)
+
+on:
+  push:
+    branches: [ "main" ]
+
+env:
+  IMAGE_NAME: ghcr.io/azdevcommunity/medrese-job   # görüntü adı
+  APP_PORT: 8085                                    # dışarı açacağın port
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    environment: VPS
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Eğer Dockerfile içinde dotnet restore/build varsa buna gerek yok.
+      # Sadece cache/derleme hızlandırmak istiyorsan ek tutabilirsin.
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ secrets.GHCR_USERNAME }}
+          password: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha
+            type=raw,value=latest
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    environment: VPS
+
+    steps:
+      - name: Fail fast if required secrets are empty
+        run: |
+          [ -n "${{ secrets.DATABASE_HOST }}" ]      || { echo "❌ DATABASE_HOST is EMPTY in Environment 'VPS'"; exit 1; }
+          [ -n "${{ secrets.DATABASE_USERNAME }}" ]  || { echo "❌ DATABASE_USERNAME is EMPTY in Environment 'VPS'"; exit 1; }
+          [ -n "${{ secrets.DATABASE_PASSWORD }}" ]  || { echo "❌ DATABASE_PASSWORD is EMPTY in Environment 'VPS'"; exit 1; }
+          [ -n "${{ secrets.DATABASE_PORT }}" ]      || { echo "❌ DATABASE_PORT is EMPTY in Environment 'VPS'"; exit 1; }
+          [ -n "${{ secrets.DATABASE_NAME }}" ]      || { echo "❌ DATABASE_NAME is EMPTY in Environment 'VPS'"; exit 1; }
+          [ -n "${{ secrets.GHCR_USERNAME }}" ]      || { echo "❌ GHCR_USERNAME is EMPTY"; exit 1; }
+          [ -n "${{ secrets.GHCR_TOKEN }}" ]         || { echo "❌ GHCR_TOKEN is EMPTY"; exit 1; }
+          [ -n "${{ secrets.VPS_HOST }}" ]           || { echo "❌ VPS_HOST is EMPTY"; exit 1; }
+          [ -n "${{ secrets.VPS_USER }}" ]           || { echo "❌ VPS_USER is EMPTY"; exit 1; }
+          [ -n "${{ secrets.VPS_SSH_KEY }}" ]        || { echo "❌ VPS_SSH_KEY is EMPTY"; exit 1; }
+
+      - name: SSH into server and deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+
+            # ağ yoksa oluştur; already-exists hata vermez
+            docker network create esm_network || true
+
+            IMAGE="${{ env.IMAGE_NAME }}:latest"
+            APP_PORT="${{ env.APP_PORT }}"
+
+            echo "GHCR login"
+            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
+
+            echo "Pull $IMAGE"
+            docker pull "$IMAGE"
+
+            echo "Write env file safely"
+            printf "%s\n" \
+              "ASPNETCORE_URLS=http://+:8085" \
+              "DATABASE_HOST=${{ secrets.DATABASE_HOST }}" \
+              "DATABASE_USERNAME=${{ secrets.DATABASE_USERNAME }}" \
+              "DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}" \
+              "DATABASE_PORT=${{ secrets.DATABASE_PORT }}" \
+              "DATABASE_NAME=${{ secrets.DATABASE_NAME }}" \
+              "PORT=${{ env.APP_PORT }}" \
+              > /root/medrese-job.env
+
+            echo "[DEBUG] env file (masked):"
+            grep -E '^(ASPNETCORE_URLS|DATABASE_HOST|DATABASE_USERNAME|DATABASE_PORT|DATABASE_NAME|PORT)=' /root/medrese-job.env | sed 's/=.*/=****/'
+
+            echo "Stop container using ${APP_PORT} if any"
+            CONTAINER_USING_PORT=$(docker ps --format '{{.ID}} {{.Ports}}' | awk '/:'"$APP_PORT"'->/ {print $1}' | head -n1)
+            [ -n "$CONTAINER_USING_PORT" ] && docker stop "$CONTAINER_USING_PORT" || true
+
+            NEW_NAME="medrese-job-$(date +%s)"
+            echo "Run $NEW_NAME"
+
+            docker run -d \
+              --name "$NEW_NAME" \
+              --env-file /root/medrese-job.env \
+              -p ${APP_PORT}:${APP_PORT} \
+              -v /var/www/esm/uploads:/app/uploads \
+              --network esm_network \
+              --network-alias medrese-job \
+              "$IMAGE"
+
+            echo "[DEBUG] Container Env (masked):"
+            docker inspect "$NEW_NAME" --format '{{range .Config.Env}}{{println .}}{{end}}' \
+              | grep -E '^(ASPNETCORE_URLS|DATABASE_HOST|DATABASE_USERNAME|DATABASE_PORT|DATABASE_NAME|PORT)=' \
+              | sed 's/DATABASE_PASSWORD=.*/DATABASE_PASSWORD=****/'
+
+            # Health check: endpoint'in varsa SECRET ile yönet (varsayılan '/')
+            HEALTH_PATH="${{ secrets.HEALTH_PATH }}"
+            [ -n "$HEALTH_PATH" ] || HEALTH_PATH="/"
+
+            echo "Health check: http://127.0.0.1:${APP_PORT}${HEALTH_PATH}"
+            for i in $(seq 1 30); do
+              if curl -fsS "http://127.0.0.1:${APP_PORT}${HEALTH_PATH}" >/dev/null 2>&1; then
+                echo "UP"
+                break
+              fi
+              sleep 1
+            done
+
+            echo "Cleanup old exited"
+            docker ps -a --filter 'status=exited' --filter 'name=medrese-job-' --format '{{.ID}}' | xargs -r docker rm
+
+            echo "Prune dangling images"
+            docker image prune -f
