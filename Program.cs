@@ -21,6 +21,7 @@ builder.Services.Configure<ShortPlaylistsOptions>(
 builder.LoadConfiguration(new List<Assembly> { Assembly.GetExecutingAssembly() });
 
 
+
 var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();
