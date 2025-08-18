@@ -5,7 +5,7 @@ on:
     branches: [ "main" ]
 
 env:
-  IMAGE_NAME: ghcr.io/azdevcommunity/medrese-job   # görüntü adı
+  IMAGE_NAME: ghcr.io/azdevcommunity/medrese-job   # görüntü adı (lowercase)
   APP_PORT: 8085                                    # dışarı açacağın port
 
 jobs:
@@ -19,9 +19,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      # Eğer Dockerfile içinde dotnet restore/build varsa buna gerek yok.
-      # Sadece cache/derleme hızlandırmak istiyorsan ek tutabilirsin.
 
       - name: Login to GHCR
         uses: docker/login-action@v3
@@ -46,7 +43,6 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-
 
   deploy:
     runs-on: ubuntu-latest
@@ -76,69 +72,72 @@ jobs:
           script: |
             set -e
 
-            # ağ yoksa oluştur; already-exists hata vermez
+            # Network yoksa oluştur
             docker network create esm_network || true
 
             IMAGE="${{ env.IMAGE_NAME }}:latest"
             APP_PORT="${{ env.APP_PORT }}"
 
-            echo "GHCR login"
+            echo "[GHCR] Login (server-side pull)"
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
 
-            echo "Pull $IMAGE"
+            echo "[Pull] $IMAGE"
             docker pull "$IMAGE"
 
-            echo "Write env file safely"
-            printf "%s\n" \
-              "ASPNETCORE_URLS=http://+:8085" \
-              "DATABASE_HOST=${{ secrets.DATABASE_HOST }}" \
-              "DATABASE_USERNAME=${{ secrets.DATABASE_USERNAME }}" \
-              "DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}" \
-              "DATABASE_PORT=${{ secrets.DATABASE_PORT }}" \
-              "DATABASE_NAME=${{ secrets.DATABASE_NAME }}" \
-              "PORT=${{ env.APP_PORT }}" \
-              "ASPNETCORE_ENVIRONMENT=Production" \
-              > /root/medrese-job.env
-
-            echo "[DEBUG] env file (masked):"
-            grep -E '^(ASPNETCORE_URLS|DATABASE_HOST|DATABASE_USERNAME|DATABASE_PORT|DATABASE_NAME|PORT)=' /root/medrese-job.env | sed 's/=.*/=****/'
-
-            echo "Stop container using ${APP_PORT} if any"
-            CONTAINER_USING_PORT=$(docker ps --format '{{.ID}} {{.Ports}}' | awk '/:'"$APP_PORT"'->/ {print $1}' | head -n1)
-            [ -n "$CONTAINER_USING_PORT" ] && docker stop "$CONTAINER_USING_PORT" || true
-
-            NEW_NAME="medrese-job-$(date +%s)"
-            echo "Run $NEW_NAME"
-
+            echo "[ENV] write /root/medrese-job.env"
+            cat > /root/medrese-job.env <<EOF
+            ASPNETCORE_ENVIRONMENT=Production
+            ASPNETCORE_URLS=http://+:${APP_PORT}
+  
+            # .NET ConfigurationBinder: DB section (double underscore)
+            DB__Host=${{ secrets.DATABASE_HOST }}
+            DB__Username=${{ secrets.DATABASE_USERNAME }}
+            DB__Password=${{ secrets.DATABASE_PASSWORD }}
+            DB__Port=${{ secrets.DATABASE_PORT }}
+            DB__Name=${{ secrets.DATABASE_NAME }}
+            EOF
+            
+            echo "[ENV] preview (masked)"
+            grep -E '^(ASPNETCORE_ENVIRONMENT|ASPNETCORE_URLS|DB__Host|DB__Username|DB__Port|DB__Name)=' /root/medrese-job.env | sed 's/=.*/=****/'
+            
+            echo "[Stop] container using port ${APP_PORT} (if any)"
+            CID=$(docker ps --format '{{.ID}} {{.Ports}}' | awk '/:'"$APP_PORT"'->/ {print $1}' | head -n1)
+            [ -n "${CID:-}" ] && docker stop "$CID" || true
+            
+            NAME="medrese-job-$(date +%s)"
+            echo "[Run] $NAME (map ${APP_PORT}:${APP_PORT})"
             docker run -d \
-              --name "$NEW_NAME" \
-              --env-file /root/medrese-job.env \
-              -p ${APP_PORT}:${APP_PORT} \
-              -v /var/www/esm/uploads:/app/uploads \
-              --network esm_network \
-              --network-alias medrese-job \
-              "$IMAGE"
-
-            echo "[DEBUG] Container Env (masked):"
-            docker inspect "$NEW_NAME" --format '{{range .Config.Env}}{{println .}}{{end}}' \
-              | grep -E '^(ASPNETCORE_URLS|DATABASE_HOST|DATABASE_USERNAME|DATABASE_PORT|DATABASE_NAME|PORT)=' \
-              | sed 's/DATABASE_PASSWORD=.*/DATABASE_PASSWORD=****/'
-
-            # Health check: endpoint'in varsa SECRET ile yönet (varsayılan '/')
+            --name "$NAME" \
+            --restart unless-stopped \
+            --env-file /root/medrese-job.env \
+            -p ${APP_PORT}:${APP_PORT} \
+            -v /var/www/esm/uploads:/app/uploads \
+            --network esm_network \
+            --network-alias medrese-job \
+            "$IMAGE"
+            
+            echo "[Inspect] Container ENV (masked)"
+            docker inspect "$NAME" --format '{{range .Config.Env}}{{println .}}{{end}}' \
+            | grep -E '^(ASPNETCORE_ENVIRONMENT|ASPNETCORE_URLS|DB__Host|DB__Username|DB__Port|DB__Name)=' \
+            | sed 's/=.*/=****/'
+            
+            # Healthcheck: endpoint yoksa bu kısmı atlayabilirsin
             HEALTH_PATH="${{ secrets.HEALTH_PATH }}"
             [ -n "$HEALTH_PATH" ] || HEALTH_PATH="/"
-
-            echo "Health check: http://127.0.0.1:${APP_PORT}${HEALTH_PATH}"
+            echo "[Health] http://127.0.0.1:${APP_PORT}${HEALTH_PATH}"
+            ok=0
             for i in $(seq 1 30); do
-              if curl -fsS "http://127.0.0.1:${APP_PORT}${HEALTH_PATH}" >/dev/null 2>&1; then
-                echo "UP"
-                break
-              fi
-              sleep 1
+            if curl -fsS "http://127.0.0.1:${APP_PORT}${HEALTH_PATH}" >/dev/null 2>&1; then
+            echo "UP"; ok=1; break
+            fi
+            sleep 1
             done
-
-            echo "Cleanup old exited"
+            if [ "$ok" -ne 1 ]; then
+            echo "⚠️ Healthcheck failed (devam ediyoruz; bu bir worker ise normal olabilir)"
+            fi
+            
+            echo "[Cleanup] old exited containers"
             docker ps -a --filter 'status=exited' --filter 'name=medrese-job-' --format '{{.ID}}' | xargs -r docker rm
-
-            echo "Prune dangling images"
+            
+            echo "[Cleanup] prune dangling images"
             docker image prune -f
