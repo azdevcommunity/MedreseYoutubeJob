@@ -20,8 +20,8 @@ public class MedreseDbContext(DbContextOptions<MedreseDbContext> options, IConfi
     //     // );
     // }
 
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {
-        modelBuilder.HasDefaultSchema(configuration["DB:SCHEME"]);
-    }
+    // protected override void OnModelCreating(ModelBuilder modelBuilder)
+    // {
+    //     modelBuilder.HasDefaultSchema(configuration["DB:SCHEME"]);
+    // }
 }
