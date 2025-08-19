@@ -3,48 +3,28 @@ using ILogger = Serilog.ILogger;
 
 namespace YoutubeApiSynchronize.Jobs;
 
-public class YoutubeSynchronize(IServiceScopeFactory scopeFactory, ILogger logger)
-    : BackgroundService
+using Microsoft.Extensions.DependencyInjection;
+using Quartz;
+using Serilog;
+
+[DisallowConcurrentExecution]
+public class YoutubeSynchronizeJob(IServiceProvider sp, ILogger logger) : IJob
 {
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    public async Task Execute(IJobExecutionContext context)
     {
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            try
-            {
-                logger.Information("Synchronizing job starting ...");
-                var delay = CalculateDuration();
-                await Task.Delay(delay, stoppingToken);
-                await SyncAsync();
-            }
-            catch (OperationCanceledException ex)
-            {
-                logger.Error(ex,"Cancelling background job, {Message}", ex.Message);
-            }
-        }
-    }
+        logger.Information("Synchronizing job starting ...");
 
-    private TimeSpan CalculateDuration()
-    {
-        var now = DateTime.Now;
-        var nextRunTime = DateTime.Today.AddHours(22);
-        if (now > nextRunTime)
-        {
-            nextRunTime = nextRunTime.AddDays(1);
-        }
-
-        var delay = nextRunTime - now;
-
-        return delay;
-    }
-
-    private async Task SyncAsync()
-    {
-        using var scope = scopeFactory.CreateScope();
+        using var scope = sp.CreateScope();
         var service = scope.ServiceProvider.GetRequiredService<YoutubeService>();
+
         try
         {
             await service.SyncAsync();
+            logger.Information("Synchronization finished.");
+        }
+        catch (OperationCanceledException ex) when (context.CancellationToken.IsCancellationRequested)
+        {
+            logger.Warning(ex, "Job cancelled: {Message}", ex.Message);
         }
         catch (Exception ex)
         {
