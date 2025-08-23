@@ -2,11 +2,11 @@ name: Build & Deploy (Medrese Job - .NET)
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
 
 env:
-  IMAGE_NAME: ghcr.io/azdevcommunity/medrese-job   # görüntü adı (lowercase)
-  APP_PORT: 8085                                    # dışarı açacağın port
+  IMAGE_NAME: ghcr.io/azdevcommunity/medrese-job
+  APP_PORT: 8085
 
 jobs:
   build-and-push:
@@ -15,7 +15,6 @@ jobs:
     permissions:
       contents: read
       packages: write
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -48,22 +47,21 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-and-push
     environment: VPS
-
     steps:
       - name: Fail fast if required secrets are empty
         run: |
-          [ -n "${{ secrets.DATABASE_HOST }}" ]      || { echo "❌ DATABASE_HOST is EMPTY in Environment 'VPS'"; exit 1; }
-          [ -n "${{ secrets.DATABASE_USERNAME }}" ]  || { echo "❌ DATABASE_USERNAME is EMPTY in Environment 'VPS'"; exit 1; }
-          [ -n "${{ secrets.DATABASE_PASSWORD }}" ]  || { echo "❌ DATABASE_PASSWORD is EMPTY in Environment 'VPS'"; exit 1; }
-          [ -n "${{ secrets.DATABASE_PORT }}" ]      || { echo "❌ DATABASE_PORT is EMPTY in Environment 'VPS'"; exit 1; }
-          [ -n "${{ secrets.DATABASE_NAME }}" ]      || { echo "❌ DATABASE_NAME is EMPTY in Environment 'VPS'"; exit 1; }
-          [ -n "${{ secrets.GHCR_USERNAME }}" ]      || { echo "❌ GHCR_USERNAME is EMPTY"; exit 1; }
-          [ -n "${{ secrets.GHCR_TOKEN }}" ]         || { echo "❌ GHCR_TOKEN is EMPTY"; exit 1; }
-          [ -n "${{ secrets.VPS_HOST }}" ]           || { echo "❌ VPS_HOST is EMPTY"; exit 1; }
-          [ -n "${{ secrets.VPS_USER }}" ]           || { echo "❌ VPS_USER is EMPTY"; exit 1; }
-          [ -n "${{ secrets.VPS_SSH_KEY }}" ]        || { echo "❌ VPS_SSH_KEY is EMPTY"; exit 1; }
+          [ -n "${{ secrets.DATABASE_HOST }}" ]     || { echo "❌ DATABASE_HOST is EMPTY in Environment 'VPS'"; exit 1; }
+          [ -n "${{ secrets.DATABASE_USERNAME }}" ] || { echo "❌ DATABASE_USERNAME is EMPTY in Environment 'VPS'"; exit 1; }
+          [ -n "${{ secrets.DATABASE_PASSWORD }}" ] || { echo "❌ DATABASE_PASSWORD is EMPTY in Environment 'VPS'"; exit 1; }
+          [ -n "${{ secrets.DATABASE_PORT }}" ]     || { echo "❌ DATABASE_PORT is EMPTY in Environment 'VPS'"; exit 1; }
+          [ -n "${{ secrets.DATABASE_NAME }}" ]     || { echo "❌ DATABASE_NAME is EMPTY in Environment 'VPS'"; exit 1; }
+          [ -n "${{ secrets.GHCR_USERNAME }}" ]     || { echo "❌ GHCR_USERNAME is EMPTY"; exit 1; }
+          [ -n "${{ secrets.GHCR_TOKEN }}" ]        || { echo "❌ GHCR_TOKEN is EMPTY"; exit 1; }
+          [ -n "${{ secrets.VPS_HOST }}" ]          || { echo "❌ VPS_HOST is EMPTY"; exit 1; }
+          [ -n "${{ secrets.VPS_USER }}" ]          || { echo "❌ VPS_USER is EMPTY"; exit 1; }
+          [ -n "${{ secrets.VPS_SSH_KEY }}" ]       || { echo "❌ VPS_SSH_KEY is EMPTY"; exit 1; }
 
-      - name: SSH into server and deploy
+      - name: SSH into server and deploy (compose)
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -72,8 +70,10 @@ jobs:
           script: |
             set -e
 
-            # Network yoksa oluştur
+            # Hazırlık
             docker network create esm_network || true
+            mkdir -p /opt/medrese
+            mkdir -p /etc/medrese/prod
 
             IMAGE="${{ env.IMAGE_NAME }}:latest"
             APP_PORT="${{ env.APP_PORT }}"
@@ -84,11 +84,12 @@ jobs:
             echo "[Pull] $IMAGE"
             docker pull "$IMAGE"
 
-            echo "[ENV] write /root/medrese-job.env"
-            cat > /root/medrese-job.env <<EOF
+            echo "[ENV] write /etc/medrese/prod/medrese-job.env"
+            umask 077
+            cat > /etc/medrese/prod/medrese-job.env <<EOF
             ASPNETCORE_ENVIRONMENT=Production
             ASPNETCORE_URLS=http://+:${APP_PORT}
-  
+
             # .NET ConfigurationBinder: DB section (double underscore)
             DB__Host=${{ secrets.DATABASE_HOST }}
             DB__Username=${{ secrets.DATABASE_USERNAME }}
@@ -96,48 +97,41 @@ jobs:
             DB__Port=${{ secrets.DATABASE_PORT }}
             DB__Name=${{ secrets.DATABASE_NAME }}
             EOF
-            
+            chmod 600 /etc/medrese/prod/medrese-job.env
+
             echo "[ENV] preview (masked)"
-            grep -E '^(ASPNETCORE_ENVIRONMENT|ASPNETCORE_URLS|DB__Host|DB__Username|DB__Port|DB__Name)=' /root/medrese-job.env | sed 's/=.*/=****/'
-            
-            echo "[Stop] container using port ${APP_PORT} (if any)"
-            CID=$(docker ps --format '{{.ID}} {{.Ports}}' | awk '/:'"$APP_PORT"'->/ {print $1}' | head -n1)
-            [ -n "${CID:-}" ] && docker stop "$CID" || true
-            
-            NAME="medrese-job-$(date +%s)"
-            echo "[Run] $NAME (map ${APP_PORT}:${APP_PORT})"
-            docker run -d \
-            --name "$NAME" \
-            --restart unless-stopped \
-            --env-file /root/medrese-job.env \
-            -p ${APP_PORT}:${APP_PORT} \
-            -v /var/www/esm/uploads:/app/uploads \
-            --network esm_network \
-            --network-alias medrese-job \
-            "$IMAGE"
-            
-            echo "[Inspect] Container ENV (masked)"
-            docker inspect "$NAME" --format '{{range .Config.Env}}{{println .}}{{end}}' \
-            | grep -E '^(ASPNETCORE_ENVIRONMENT|ASPNETCORE_URLS|DB__Host|DB__Username|DB__Port|DB__Name)=' \
-            | sed 's/=.*/=****/'
-            
-            # Healthcheck: endpoint yoksa bu kısmı atlayabilirsin
+            grep -E '^(ASPNETCORE_ENVIRONMENT|ASPNETCORE_URLS|DB__Host|DB__Username|DB__Port|DB__Name)=' /etc/medrese/prod/medrese-job.env | sed 's/=.*/=****/'
+
+            # Deploy (Compose)
+            cd /opt/medrese
+            export IMAGE_TAG=latest
+            if [ ! -f compose.prod.yml ]; then
+              echo "❌ /opt/medrese/compose.prod.yml bulunamadı"
+              exit 1
+            fi
+            docker compose -f compose.prod.yml pull medrese-job
+            docker compose -f compose.prod.yml up -d --no-deps medrese-job
+
+            # Sağlık kontrolü
             HEALTH_PATH="${{ secrets.HEALTH_PATH }}"
             [ -n "$HEALTH_PATH" ] || HEALTH_PATH="/"
             echo "[Health] http://127.0.0.1:${APP_PORT}${HEALTH_PATH}"
             ok=0
-            for i in $(seq 1 30); do
-            if curl -fsS "http://127.0.0.1:${APP_PORT}${HEALTH_PATH}" >/dev/null 2>&1; then
-            echo "UP"; ok=1; break
-            fi
-            sleep 1
+            for i in $(seq 1 30);  do
+              if curl -fsS "http://127.0.0.1:${APP_PORT}${HEALTH_PATH}" >/dev/null 2>&1; then
+                echo "UP"; ok=1; break
+              fi
+              sleep 1
             done
             if [ "$ok" -ne 1 ]; then
-            echo "⚠️ Healthcheck failed (devam ediyoruz; bu bir worker ise normal olabilir)"
+              echo "⚠️ Healthcheck failed (devam)"
             fi
-            
-            echo "[Cleanup] old exited containers"
-            docker ps -a --filter 'status=exited' --filter 'name=medrese-job-' --format '{{.ID}}' | xargs -r docker rm
-            
+
+            echo "[Status]"
+            docker compose -f compose.prod.yml ps
+
+            echo "[Logs tail]"
+            docker logs --tail=50 medrese-job || true
+
             echo "[Cleanup] prune dangling images"
             docker image prune -f
