@@ -16,7 +16,13 @@
       "launchUrl": "swagger",
       "applicationUrl": "http://localhost:5225",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://+:8075",
+        "DB__Host": "194.163.148.93",
+        "DB__Name": "esmdb_dev",
+        "DB__Password": "eeKRE18xe9£@",
+        "DB__Port":"5432",
+        "DB__Username":"esm_user"
       }
     },
     "https": {

@@ -25,6 +25,32 @@ public class YoutubeService(
         ApplicationName = "YouTubePlaylistFetcher"
     });
 
+    public async Task<object> UpdateChannelStatsAsync()
+    {
+        var channelStat = await dbContext.ChannelStats
+            .AsNoTracking()
+            .FirstOrDefaultAsync() ?? new ChannelStat();
+
+        var request = _youtubeService.Channels.List("statistics");
+        request.Id = youtubeConfig.Value.ChannelID;
+
+        var response = await request.ExecuteAsync();
+
+        var stats = response.Items[0].Statistics;
+
+
+        channelStat.SubscriberCount = stats.SubscriberCount;
+        channelStat.ViewCount = stats.ViewCount;
+        channelStat.HiddenSubscriberCount = stats.HiddenSubscriberCount;
+        channelStat.VideoCount = stats.VideoCount;
+
+        dbContext.ChannelStats.Update(channelStat);
+
+        await dbContext.SaveChangesAsync();
+
+        return channelStat;
+    }
+
 
     public async Task<object> SyncAsync()
     {
