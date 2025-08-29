@@ -90,5 +90,11 @@ public class YoutubeController
         client.Disconnect();
         return Ok(new { message = $"Jenkins {(status == 1 ? "başlatıldı" : "durduruldu")}" });
     }
+
+    [HttpGet("channelstat")]
+    public async Task<object> GetChannelStat()
+    {
+        return await _youtubeService.UpdateChannelStatsAsync();
+    }
     
 }

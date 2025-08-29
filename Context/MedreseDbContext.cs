@@ -10,6 +10,8 @@ public class MedreseDbContext(DbContextOptions<MedreseDbContext> options, IConfi
     public DbSet<Video> Videos { get; set; }
 
     public DbSet<PlaylistVideo> PlaylistVideos { get; set; }
+    
+    public DbSet<ChannelStat> ChannelStats { get; set; }
 
     // protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     // {

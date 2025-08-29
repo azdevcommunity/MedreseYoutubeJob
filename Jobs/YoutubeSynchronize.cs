@@ -20,6 +20,7 @@ public class YoutubeSynchronizeJob(IServiceProvider sp, ILogger logger) : IJob
         try
         {
             await service.SyncAsync();
+            await service.UpdateChannelStatsAsync();
             logger.Information("Synchronization finished.");
         }
         catch (OperationCanceledException ex) when (context.CancellationToken.IsCancellationRequested)

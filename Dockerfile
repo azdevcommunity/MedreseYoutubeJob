@@ -1,19 +1,20 @@
 ﻿# Base runtime image for .NET applications
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
+# Uygulama 8085 dinleyecekse:
+ENV ASPNETCORE_URLS=http://0.0.0.0:8085
 
-EXPOSE 8085
 
-# Build stage: SDK image with the .NET tools installed
+# Build stage
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 
-# Copy the .csproj file and restore dependencies
+# Sadece csproj kopyala ve restore yap (cache verimli)
 COPY YoutubeApiSynchronize.csproj ./
 RUN dotnet restore "YoutubeApiSynchronize.csproj"
 
-# Copy the rest of the application code and build
+# Kodları kopyala ve build et
 COPY . .
 RUN dotnet build "YoutubeApiSynchronize.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
