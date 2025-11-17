@@ -21,6 +21,26 @@ builder.Host.UseSerilog((context, services, configuration) =>
 Log.Information("Application starting... Environment: {Environment}", 
     builder.Environment.EnvironmentName);
 
+
+builder.Services.AddHttpLogging(options =>
+{
+    // Nəyi loglamaq istədiyini təyin et
+    options.LoggingFields = Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.All;
+    // Request headers
+    options.RequestHeaders.Add("Content-Type");
+    options.RequestHeaders.Add("User-Agent");
+    options.RequestHeaders.Add("X-Forwarded-For");
+    
+    // Response headers
+    options.ResponseHeaders.Add("Content-Type");
+    options.ResponseHeaders.Add("Content-Length");
+    options.ResponseHeaders.Add("Server");
+    
+    // Media types
+    options.MediaTypeOptions.AddText("application/json");
+    options.MediaTypeOptions.AddText("application/xml");
+    options.MediaTypeOptions.AddText("text/plain");
+});
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

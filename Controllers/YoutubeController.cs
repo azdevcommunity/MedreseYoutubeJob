@@ -214,38 +214,89 @@ public class YoutubeController
 
 
     [HttpPost("push-dlt")]
-    public async Task<IActionResult> PushNotificationDlt([FromBody] string payload, [FromQuery] string challenge)
+    public async Task<IActionResult> PushNotificationDlt()
     {
         try
         {
+            // Request bodysini oxu
+            using var reader = new StreamReader(Request.Body);
+            var payload = await reader.ReadToEndAsync();
+
+            // Query parametrlərini yoxla
+            var challenge = Request.Query["challenge"].FirstOrDefault();
+
             if (!string.IsNullOrEmpty(challenge))
             {
                 return Ok(challenge);
             }
 
+            if (string.IsNullOrEmpty(payload))
+            {
+                return BadRequest("Payload is empty");
+            }
+
+            // YouTube notification'dan məlumatları çıxar
+            var (videoId, title, publishedAt) = ParseYouTubeNotification(payload);
+
             var query =
                 "INSERT INTO youtube_notifications (video_id, title, published_at, notification_data, created_at) " +
                 "VALUES (@p0, @p1, @p2, @p3, CURRENT_TIMESTAMP)";
 
-            // Veriyi veritabanına kaydet
-            await _context.Database.ExecuteSqlRawAsync(query, null, null, null, payload);
+            await _context.Database.ExecuteSqlRawAsync(query,
+                videoId ?? string.Empty,
+                title ?? string.Empty,
+                publishedAt ?? DateTime.UtcNow,
+                payload);
 
             return Ok("Notification received");
         }
         catch (Exception e)
         {
-            var query =
+            // Error'u logla
+            var errorQuery =
                 "INSERT INTO youtube_notifications (video_id, title, published_at, notification_data, created_at) " +
                 "VALUES (@p0, @p1, @p2, @p3, CURRENT_TIMESTAMP)";
 
-            // Veriyi veritabanına kaydet
-            await _context.Database.ExecuteSqlRawAsync(query, null, null, null, e.Message);
-        }
+            await _context.Database.ExecuteSqlRawAsync(errorQuery,
+                "ERROR",
+                e.GetType().Name,
+                DateTime.UtcNow,
+                $"Error: {e.Message}\nStack: {e.StackTrace}");
 
-        return Ok("Notification received");
-        
+            return StatusCode(500, "Internal server error");
+        }
     }
 
+    private (string videoId, string title, DateTime? publishedAt) ParseYouTubeNotification(string payload)
+    {
+        try
+        {
+            // XML parsing
+            var doc = new System.Xml.XmlDocument();
+            doc.LoadXml(payload);
+
+            var nsManager = new System.Xml.XmlNamespaceManager(doc.NameTable);
+            nsManager.AddNamespace("yt", "http://www.youtube.com/xml/schemas/2015");
+            nsManager.AddNamespace("atom", "http://www.w3.org/2005/Atom");
+
+            var videoId = doc.SelectSingleNode("//yt:videoId", nsManager)?.InnerText;
+            var title = doc.SelectSingleNode("//atom:title", nsManager)?.InnerText;
+            var publishedAtStr = doc.SelectSingleNode("//atom:published", nsManager)?.InnerText;
+
+            DateTime? publishedAt = null;
+            if (DateTime.TryParse(publishedAtStr, out var parsedDate))
+            {
+                publishedAt = parsedDate;
+            }
+
+            return (videoId, title, publishedAt);
+        }
+        catch (Exception ex)
+        {
+            // Parse error olarsa, əsas məlumatları saxla
+            return (null, "Parse Error", DateTime.UtcNow);
+        }
+    }
 
     [HttpPost("subscribe")]
     public async Task<IActionResult> Subscribe([FromBody] string payload, [FromQuery] string challenge)
