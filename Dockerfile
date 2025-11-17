@@ -3,6 +3,9 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
 # Uygulama 8085 dinleyecekse:
 ENV ASPNETCORE_URLS=http://0.0.0.0:8085
+# Serilog console output'unu buffer'lamadan göster
+ENV DOTNET_SYSTEM_CONSOLE_ALLOW_ANSI_COLOR_REDIRECTION=true
+ENV DOTNET_RUNNING_IN_CONTAINER=true
 
 
 # Build stage
@@ -27,4 +30,12 @@ RUN dotnet publish "YoutubeApiSynchronize.csproj" -c $BUILD_CONFIGURATION -o /ap
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+
+# appsettings dosyalarını kopyala
+COPY appsettings.json .
+COPY appsettings.dev.json .
+
+# Logs klasörü oluştur
+RUN mkdir -p /app/logs
+
 ENTRYPOINT ["dotnet", "YoutubeApiSynchronize.dll"]
