@@ -201,8 +201,12 @@ public class YoutubeController(
     }
 
     [HttpGet("push")]
-    public async Task<IActionResult> Push([FromQuery] string hubMode, [FromQuery] string hubTopic,
-        [FromQuery] string hubChallenge, [FromQuery] int hubLeaseSeconds)
+    public async Task<IActionResult> Push(
+        [FromQuery(Name = "hub.mode")] string hubMode,
+        [FromQuery(Name = "hub.topic")] string hubTopic,
+        [FromQuery(Name = "hub.challenge")] string hubChallenge,
+        [FromQuery(Name = "hub.lease_seconds")]
+        int hubLeaseSeconds)
     {
         var origin = Request.Headers["Origin"].ToString();
         logger.Information($"Request received from Origin: {origin}");
