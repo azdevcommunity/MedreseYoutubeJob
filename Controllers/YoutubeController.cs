@@ -221,24 +221,12 @@ public class YoutubeController
             return Ok(challenge);
         }
 
-        // XML verisini işlemek için XmlSerializer kullan
-        var serializer = new XmlSerializer(typeof(YoutubeNotificationModel));
-        YoutubeNotificationModel notificationModel;
-
-        using (var reader = new StringReader(payload))
-        {
-            notificationModel = (YoutubeNotificationModel)serializer.Deserialize(reader);
-        }
-
-        // Gelen veriyi konsola yazdır
-        Console.WriteLine($"Video ID: {notificationModel.VideoId}, Title: {notificationModel.Title}, Published: {notificationModel.PublishedAt}");
-
         var query = 
             "INSERT INTO youtube_notifications (video_id, title, published_at, notification_data, created_at) " +
             "VALUES (@p0, @p1, @p2, @p3, CURRENT_TIMESTAMP)";
 
         // Veriyi veritabanına kaydet
-        await _context.Database.ExecuteSqlRawAsync(query, notificationModel.VideoId, notificationModel.Title, notificationModel.PublishedAt, payload);
+        await _context.Database.ExecuteSqlRawAsync(query, null, null, null, payload);
 
         return Ok("Notification received");
     }
