@@ -10,7 +10,7 @@ public class MedreseDbContext(DbContextOptions<MedreseDbContext> options, IConfi
     public DbSet<Video> Videos { get; set; }
 
     public DbSet<PlaylistVideo> PlaylistVideos { get; set; }
-    
+
     public DbSet<ChannelStat> ChannelStats { get; set; }
 
     // protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -22,8 +22,11 @@ public class MedreseDbContext(DbContextOptions<MedreseDbContext> options, IConfi
     //     // );
     // }
 
-    // protected override void OnModelCreating(ModelBuilder modelBuilder)
-    // {
-    //     modelBuilder.HasDefaultSchema(configuration["DB:SCHEME"]);
-    // }
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        // modelBuilder.HasDefaultSchema(configuration["DB:SCHEME"]);
+
+        modelBuilder.Entity<Playlist>().HasQueryFilter(e => e.IsOldChannel == false);
+        modelBuilder.Entity<Video>().HasQueryFilter(e => e.IsOldChannel == false);
+    }
 }
