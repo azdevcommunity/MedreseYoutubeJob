@@ -202,11 +202,15 @@ public class YoutubeController
         var title = json["title"]?.ToString();
         var publishedAt = json["published"]?.ToString();
 
-        var query =
-            "INSERT INTO youtube_notifications (video_id, title, published_at, notification_data, created_at) " +
-            "VALUES (@p0, @p1, @p2, @p3, CURRENT_TIMESTAMP)";
-
-        await _context.Database.ExecuteSqlRawAsync(query, videoId, title, publishedAt, payload);
+        YouTubeNotification youtubeNotificationModel = new YouTubeNotification()
+        {
+            NotificationData = title,
+            VideoId = videoId,
+            Title = title,
+        };
+            
+        await _context.YouTubeNotifications.AddAsync(youtubeNotificationModel);
+        await _context.SaveChangesAsync();
 
         Console.WriteLine($"Video ID: {videoId}, Title: {title}, Published: {publishedAt}");
 
@@ -246,23 +250,23 @@ public class YoutubeController
                 Title = title,
             };
             
-            _context.YouTubeNotifications.Add(youtubeNotificationModel);
-            _context.SaveChanges();
+            await _context.YouTubeNotifications.AddAsync(youtubeNotificationModel);
+            await _context.SaveChangesAsync();
+
             return Ok("Notification received");
         }
         catch (Exception e)
         {
-            // Error'u logla
-            var errorQuery =
-                "INSERT INTO youtube_notifications (video_id, title, published_at, notification_data, created_at) " +
-                "VALUES (@p0, @p1, @p2, @p3, CURRENT_TIMESTAMP)";
-
-            await _context.Database.ExecuteSqlRawAsync(errorQuery,
-                "ERROR",
-                e.GetType().Name,
-                DateTime.UtcNow,
-                $"Error: {e.Message}\nStack: {e.StackTrace}");
-
+            YouTubeNotification youtubeNotificationModel = new YouTubeNotification()
+            {
+                NotificationData = "ERROR",
+                VideoId = e.GetType().Name,
+                Title =     $"Error: {e.Message}\nStack: {e.StackTrace}",
+            };
+            
+            await _context.YouTubeNotifications.AddAsync(youtubeNotificationModel);
+            await _context.SaveChangesAsync();
+            
             return StatusCode(500, "Internal server error");
         }
     }
@@ -304,6 +308,15 @@ public class YoutubeController
         }
         catch (Exception ex)
         {
+            
+            
+            YouTubeNotification youtubeNotificationModel = new YouTubeNotification()
+            {
+                NotificationData = ex.ToString(),
+            };
+            
+            _context.YouTubeNotifications.Add(youtubeNotificationModel);
+            _context.SaveChanges();
             // Parse error olarsa, əsas məlumatları saxla
             return (null, "Parse Error", DateTime.UtcNow);
         }
