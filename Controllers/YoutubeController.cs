@@ -14,11 +14,14 @@ public class YoutubeController
 {
     private readonly YoutubeService _youtubeService;
     private readonly IConfiguration _configuration;
+    private readonly ILogger<YoutubeController> _logger;
 
-    public YoutubeController(YoutubeService youtubeService, IConfiguration configuration)
+    public YoutubeController(YoutubeService youtubeService, IConfiguration configuration,
+        ILogger<YoutubeController> logger)
     {
         _youtubeService = youtubeService;
         _configuration = configuration;
+        _logger = logger;
     }
 
     [HttpGet("env")]
@@ -126,25 +129,25 @@ public class YoutubeController
                 Updated = entry.Element("{http://www.w3.org/2005/Atom}updated")?.Value
             };
 
-            Console.WriteLine($"Video ID: {notification.VideoId}");
-            Console.WriteLine($"Channel ID: {notification.ChannelId}");
-            Console.WriteLine($"Title: {notification.Title}");
-            Console.WriteLine($"Video URL: {notification.VideoUrl}");
-            Console.WriteLine($"Channel URL: {notification.ChannelUrl}");
-            Console.WriteLine($"Published: {notification.Published}");
-            Console.WriteLine($"Updated: {notification.Updated}");
+            _logger.LogInformation($"Video ID: {notification.VideoId}");
+            _logger.LogInformation($"Channel ID: {notification.ChannelId}");
+            _logger.LogInformation($"Title: {notification.Title}");
+            _logger.LogInformation($"Video URL: {notification.VideoUrl}");
+            _logger.LogInformation($"Channel URL: {notification.ChannelUrl}");
+            _logger.LogInformation($"Published: {notification.Published}");
+            _logger.LogInformation($"Updated: {notification.Updated}");
 
 
             return Ok("Notification processed successfully");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error parsing notification: {ex.Message}");
+            _logger.LogInformation($"Error parsing notification: {ex.Message}");
             return BadRequest("Error processing notification");
         }
     }
-    
-    
+
+
     [HttpPost("push-dlt")]
     public async Task<IActionResult> PostDlt([FromBody] string xmlContent)
     {
@@ -170,20 +173,20 @@ public class YoutubeController
                 Updated = entry.Element("{http://www.w3.org/2005/Atom}updated")?.Value
             };
 
-            Console.WriteLine($"Video ID: {notification.VideoId}");
-            Console.WriteLine($"Channel ID: {notification.ChannelId}");
-            Console.WriteLine($"Title: {notification.Title}");
-            Console.WriteLine($"Video URL: {notification.VideoUrl}");
-            Console.WriteLine($"Channel URL: {notification.ChannelUrl}");
-            Console.WriteLine($"Published: {notification.Published}");
-            Console.WriteLine($"Updated: {notification.Updated}");
+            _logger.LogInformation($"Video ID: {notification.VideoId}");
+            _logger.LogInformation($"Channel ID: {notification.ChannelId}");
+            _logger.LogInformation($"Title: {notification.Title}");
+            _logger.LogInformation($"Video URL: {notification.VideoUrl}");
+            _logger.LogInformation($"Channel URL: {notification.ChannelUrl}");
+            _logger.LogInformation($"Published: {notification.Published}");
+            _logger.LogInformation($"Updated: {notification.Updated}");
 
 
             return Ok("Notification processed successfully");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error parsing notification: {ex.Message}");
+            _logger.LogInformation($"Error parsing notification: {ex.Message}");
             return BadRequest("Error processing notification");
         }
     }
