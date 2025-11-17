@@ -210,6 +210,32 @@ public class YoutubeController
 
         return Ok("Notification received");
     }
+    
+    
+    [HttpPost("push-dlt")]
+    public async Task<IActionResult> PushNotificationDlt([FromBody] string payload, [FromQuery] string challenge)
+    {
+        if (!string.IsNullOrEmpty(challenge))
+        {
+            return Ok(challenge);
+        }
+
+        var json = JObject.Parse(payload);
+        var videoId = json["video_id"]?.ToString();
+        var title = json["title"]?.ToString();
+        var publishedAt = json["published"]?.ToString();
+
+        var query =
+            "INSERT INTO youtube_notifications (video_id, title, published_at, notification_data, created_at) " +
+            "VALUES (@p0, @p1, @p2, @p3, CURRENT_TIMESTAMP)";
+
+        await _context.Database.ExecuteSqlRawAsync(query, videoId, title, publishedAt, payload);
+
+        Console.WriteLine($"Video ID: {videoId}, Title: {title}, Published: {publishedAt}");
+
+        return Ok("Notification received");
+    }
+
 
 
     [HttpPost("subscribe")]
