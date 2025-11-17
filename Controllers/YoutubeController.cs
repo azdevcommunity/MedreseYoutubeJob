@@ -1,4 +1,5 @@
 using System.Xml.Linq;
+using System.Xml.Serialization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
@@ -220,18 +221,24 @@ public class YoutubeController
             return Ok(challenge);
         }
 
-        var json = JObject.Parse(payload);
-        var videoId = json["video_id"]?.ToString();
-        var title = json["title"]?.ToString();
-        var publishedAt = json["published"]?.ToString();
+        // XML verisini işlemek için XmlSerializer kullan
+        var serializer = new XmlSerializer(typeof(YoutubeNotificationModel));
+        YoutubeNotificationModel notificationModel;
 
-        var query =
+        using (var reader = new StringReader(payload))
+        {
+            notificationModel = (YoutubeNotificationModel)serializer.Deserialize(reader);
+        }
+
+        // Gelen veriyi konsola yazdır
+        Console.WriteLine($"Video ID: {notificationModel.VideoId}, Title: {notificationModel.Title}, Published: {notificationModel.PublishedAt}");
+
+        var query = 
             "INSERT INTO youtube_notifications (video_id, title, published_at, notification_data, created_at) " +
             "VALUES (@p0, @p1, @p2, @p3, CURRENT_TIMESTAMP)";
 
-        await _context.Database.ExecuteSqlRawAsync(query, videoId, title, publishedAt, payload);
-
-        Console.WriteLine($"Video ID: {videoId}, Title: {title}, Published: {publishedAt}");
+        // Veriyi veritabanına kaydet
+        await _context.Database.ExecuteSqlRawAsync(query, notificationModel.VideoId, notificationModel.Title, notificationModel.PublishedAt, payload);
 
         return Ok("Notification received");
     }
@@ -323,4 +330,17 @@ public class YoutubeController
 
         return Ok("Subscription updated successfully.");
     }
+}
+
+
+public class YoutubeNotificationModel
+{
+    [XmlElement("video_id")]
+    public string VideoId { get; set; }
+
+    [XmlElement("title")]
+    public string Title { get; set; }
+
+    [XmlElement("published")]
+    public string PublishedAt { get; set; }
 }
