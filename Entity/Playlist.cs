@@ -24,4 +24,7 @@ public class Playlist
 
     [Column("video_count")]
     public long VideoCount { get; set; }
+    
+    [Column("is_old_channel")]
+    public bool IsOldChannel { get; set; }
 }
