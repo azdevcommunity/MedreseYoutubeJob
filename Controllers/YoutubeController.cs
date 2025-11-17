@@ -28,34 +28,76 @@ public class YoutubeController
     [HttpGet("env")]
     public IActionResult GetEnv()
     {
-        var db = _configuration.GetSection("DB").Get<DatabaseSettings>()!;
+        try
+        {
+            _logger.Information("GetEnv endpoint called");
+            var db = _configuration.GetSection("DB").Get<DatabaseSettings>()!;
 
-        return Ok(
-            new
-            {
-                TestValue = _configuration["Test:Value"],
-                db.ConnectionString,
-            }
-        );
+            _logger.Debug("Environment configuration retrieved successfully");
+            return Ok(
+                new
+                {
+                    TestValue = _configuration["Test:Value"],
+                    db.ConnectionString,
+                }
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Error in GetEnv endpoint");
+            return StatusCode(500, new { error = "Internal server error" });
+        }
     }
 
     [HttpGet("/video-db/{videoId}")]
     public async Task<IActionResult> GetVideoFromDb(string videoId)
     {
-        return Ok(await _youtubeService.GetVideoFromDb(videoId));
+        try
+        {
+            _logger.Information("Fetching video from database: {VideoId}", videoId);
+            var result = await _youtubeService.GetVideoFromDb(videoId);
+            _logger.Debug("Video retrieved from database: {VideoId}", videoId);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Error fetching video from database: {VideoId}", videoId);
+            return StatusCode(500, new { error = "Internal server error" });
+        }
     }
 
     [HttpGet("/video-ytb/{videoId}")]
     public async Task<IActionResult> GetVideoFromYoutube(string videoId)
     {
-        return Ok(await _youtubeService.GetVideoFromYoutube(videoId));
+        try
+        {
+            _logger.Information("Fetching video from YouTube: {VideoId}", videoId);
+            var result = await _youtubeService.GetVideoFromYoutube(videoId);
+            _logger.Debug("Video retrieved from YouTube: {VideoId}", videoId);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Error fetching video from YouTube: {VideoId}", videoId);
+            return StatusCode(500, new { error = "Internal server error" });
+        }
     }
-
 
     [HttpPut("/{videoId}")]
     public async Task<IActionResult> UpdateByVideoId(string videoId)
     {
-        return Ok(await _youtubeService.UpdateByVideoId(videoId));
+        try
+        {
+            _logger.Information("Updating video: {VideoId}", videoId);
+            var result = await _youtubeService.UpdateByVideoId(videoId);
+            _logger.Information("Video updated successfully: {VideoId}", videoId);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Error updating video: {VideoId}", videoId);
+            return StatusCode(500, new { error = "Internal server error" });
+        }
     }
 
     [HttpPost("sync")]
@@ -63,11 +105,20 @@ public class YoutubeController
     {
         try
         {
-            return Ok(await _youtubeService.SyncAsync());
+            _logger.Information("YouTube synchronization started via API endpoint");
+            var result = await _youtubeService.SyncAsync();
+            _logger.Information("YouTube synchronization completed successfully");
+            return Ok(result);
         }
         catch (InvalidOperationException ex)
         {
+            _logger.Warning(ex, "Rate limit exceeded during synchronization");
             return StatusCode(429, new { Message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Error during YouTube synchronization");
+            return StatusCode(500, new { error = "Internal server error" });
         }
     }
 
@@ -75,33 +126,59 @@ public class YoutubeController
     [HttpPost("jenkins/{status}")]
     public IActionResult TurnJenkins(int status)
     {
-        using var client = new SshClient(_configuration["SERVER_HOST"], _configuration["SERVER_USER_NAME"],
-            _configuration["SERVER_PASSWORD"]);
-        client.Connect();
+        try
+        {
+            _logger.Information("Jenkins control request: status={Status}", status);
 
-        if (status == 1)
-        {
-            Console.WriteLine("Starting Jenkins...");
-            client.RunCommand("sudo systemctl start jenkins");
-        }
-        else if (status == 0)
-        {
-            Console.WriteLine("Stopping Jenkins...");
-            client.RunCommand("sudo systemctl stop jenkins");
-        }
-        else
-        {
-            return BadRequest("Geçersiz parametre. Sadece 0 veya 1 olmalı.");
-        }
+            if (status != 0 && status != 1)
+            {
+                _logger.Warning("Invalid Jenkins status parameter: {Status}", status);
+                return BadRequest("Geçersiz parametre. Sadece 0 veya 1 olmalı.");
+            }
 
-        client.Disconnect();
-        return Ok(new { message = $"Jenkins {(status == 1 ? "başlatıldı" : "durduruldu")}" });
+            using var client = new SshClient(_configuration["SERVER_HOST"], _configuration["SERVER_USER_NAME"],
+                _configuration["SERVER_PASSWORD"]);
+            
+            _logger.Debug("Connecting to SSH server");
+            client.Connect();
+
+            if (status == 1)
+            {
+                _logger.Information("Starting Jenkins service");
+                client.RunCommand("sudo systemctl start jenkins");
+            }
+            else
+            {
+                _logger.Information("Stopping Jenkins service");
+                client.RunCommand("sudo systemctl stop jenkins");
+            }
+
+            client.Disconnect();
+            _logger.Information("Jenkins service {Action} successfully", status == 1 ? "started" : "stopped");
+            return Ok(new { message = $"Jenkins {(status == 1 ? "başlatıldı" : "durduruldu")}" });
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Error controlling Jenkins service");
+            return StatusCode(500, new { error = "Internal server error" });
+        }
     }
 
     [HttpGet("channelstat")]
     public async Task<object> GetChannelStat()
     {
-        return await _youtubeService.UpdateChannelStatsAsync();
+        try
+        {
+            _logger.Information("Channel statistics request received");
+            var result = await _youtubeService.UpdateChannelStatsAsync();
+            _logger.Information("Channel statistics retrieved successfully");
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Error retrieving channel statistics");
+            return new { error = "Internal server error" };
+        }
     }
 
 
@@ -110,11 +187,13 @@ public class YoutubeController
     {
         try
         {
+            _logger.Information("YouTube push notification received");
             var xmlDoc = XDocument.Parse(xmlContent);
 
             var entry = xmlDoc.Descendants("{http://www.w3.org/2005/Atom}entry").FirstOrDefault();
             if (entry == null)
             {
+                _logger.Warning("Invalid notification format received");
                 return BadRequest("Invalid notification format.");
             }
 
@@ -130,20 +209,16 @@ public class YoutubeController
                 Updated = entry.Element("{http://www.w3.org/2005/Atom}updated")?.Value
             };
 
-            _logger.Information($"Video ID: {notification.VideoId}");
-            _logger.Information($"Channel ID: {notification.ChannelId}");
-            _logger.Information($"Title: {notification.Title}");
-            _logger.Information($"Video URL: {notification.VideoUrl}");
-            _logger.Information($"Channel URL: {notification.ChannelUrl}");
-            _logger.Information($"Published: {notification.Published}");
-            _logger.Information($"Updated: {notification.Updated}");
-
+            _logger.Information("YouTube notification parsed - VideoId: {VideoId}, ChannelId: {ChannelId}, Title: {Title}",
+                notification.VideoId, notification.ChannelId, notification.Title);
+            _logger.Debug("Notification details - VideoUrl: {VideoUrl}, ChannelUrl: {ChannelUrl}, Published: {Published}",
+                notification.VideoUrl, notification.ChannelUrl, notification.Published);
 
             return Ok("Notification processed successfully");
         }
         catch (Exception ex)
         {
-            _logger.Error($"Error parsing notification: {ex.Message}");
+            _logger.Error(ex, "Error parsing YouTube push notification");
             return BadRequest("Error processing notification");
         }
     }
@@ -154,11 +229,13 @@ public class YoutubeController
     {
         try
         {
+            _logger.Information("YouTube push-dlt notification received");
             var xmlDoc = XDocument.Parse(xmlContent);
 
             var entry = xmlDoc.Descendants("{http://www.w3.org/2005/Atom}entry").FirstOrDefault();
             if (entry == null)
             {
+                _logger.Warning("Invalid notification format received in push-dlt");
                 return BadRequest("Invalid notification format.");
             }
 
@@ -174,20 +251,16 @@ public class YoutubeController
                 Updated = entry.Element("{http://www.w3.org/2005/Atom}updated")?.Value
             };
 
-            _logger.Information($"Video ID: {notification.VideoId}");
-            _logger.Information($"Channel ID: {notification.ChannelId}");
-            _logger.Information($"Title: {notification.Title}");
-            _logger.Information($"Video URL: {notification.VideoUrl}");
-            _logger.Information($"Channel URL: {notification.ChannelUrl}");
-            _logger.Information($"Published: {notification.Published}");
-            _logger.Information($"Updated: {notification.Updated}");
-
+            _logger.Information("YouTube push-dlt notification parsed - VideoId: {VideoId}, ChannelId: {ChannelId}, Title: {Title}",
+                notification.VideoId, notification.ChannelId, notification.Title);
+            _logger.Debug("Push-dlt notification details - VideoUrl: {VideoUrl}, ChannelUrl: {ChannelUrl}, Published: {Published}",
+                notification.VideoUrl, notification.ChannelUrl, notification.Published);
 
             return Ok("Notification processed successfully");
         }
         catch (Exception ex)
         {
-            _logger.Error($"Error parsing notification: {ex.Message}");
+            _logger.Error(ex, "Error parsing YouTube push-dlt notification");
             return BadRequest("Error processing notification");
         }
     }

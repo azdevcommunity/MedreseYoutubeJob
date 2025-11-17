@@ -27,28 +27,39 @@ public class YoutubeService(
 
     public async Task<object> UpdateChannelStatsAsync()
     {
-        var channelStat = await dbContext.ChannelStats
-            .AsNoTracking()
-            .FirstOrDefaultAsync() ?? new ChannelStat();
+        try
+        {
+            logger.Information("Updating channel statistics for channel: {ChannelId}", youtubeConfig.Value.ChannelID);
+            
+            var channelStat = await dbContext.ChannelStats
+                .AsNoTracking()
+                .FirstOrDefaultAsync() ?? new ChannelStat();
 
-        var request = _youtubeService.Channels.List("statistics");
-        request.Id = youtubeConfig.Value.ChannelID;
+            var request = _youtubeService.Channels.List("statistics");
+            request.Id = youtubeConfig.Value.ChannelID;
 
-        var response = await request.ExecuteAsync();
+            var response = await request.ExecuteAsync();
 
-        var stats = response.Items[0].Statistics;
+            var stats = response.Items[0].Statistics;
 
+            channelStat.SubscriberCount = stats.SubscriberCount;
+            channelStat.ViewCount = stats.ViewCount;
+            channelStat.HiddenSubscriberCount = stats.HiddenSubscriberCount;
+            channelStat.VideoCount = stats.VideoCount;
 
-        channelStat.SubscriberCount = stats.SubscriberCount;
-        channelStat.ViewCount = stats.ViewCount;
-        channelStat.HiddenSubscriberCount = stats.HiddenSubscriberCount;
-        channelStat.VideoCount = stats.VideoCount;
+            dbContext.ChannelStats.Update(channelStat);
+            await dbContext.SaveChangesAsync();
 
-        dbContext.ChannelStats.Update(channelStat);
+            logger.Information("Channel statistics updated successfully. Subscribers: {Subscribers}, Views: {Views}, Videos: {Videos}",
+                stats.SubscriberCount, stats.ViewCount, stats.VideoCount);
 
-        await dbContext.SaveChangesAsync();
-
-        return channelStat;
+            return channelStat;
+        }
+        catch (Exception ex)
+        {
+            logger.Error(ex, "Error updating channel statistics");
+            throw;
+        }
     }
 
 
@@ -117,90 +128,111 @@ public class YoutubeService(
     {
         var playlists = new List<Playlist>();
         string? nextPageToken = null;
+        int pageCount = 0;
 
-        do
+        try
         {
-            var request = _youtubeService.Playlists.List("snippet");
-            request.ChannelId = youtubeConfig.Value.ChannelID;
-            request.MaxResults = 50;
-            request.PageToken = nextPageToken;
+            logger.Information("Fetching playlists for channel: {ChannelId}", youtubeConfig.Value.ChannelID);
 
-            var response = await request.ExecuteAsync();
-
-            if (response.Items.Any())
+            do
             {
-                playlists.AddRange(response.Items
-                    .Where(item => item.Snippet != null)
-                    .Select(item => new Playlist
-                    {
-                        PlaylistId = item.Id,
-                        Title = item.Snippet.Title,
-                        Thumbnail = string.Join("+",
-                            item.Snippet.Thumbnails?.Default__?.Url ?? string.Empty,
-                            item.Snippet.Thumbnails?.Medium?.Url ?? string.Empty,
-                            item.Snippet.Thumbnails?.High?.Url ?? string.Empty,
-                            item.Snippet.Thumbnails?.Maxres?.Url ?? item.Snippet.Thumbnails?.High?.Url ?? string.Empty),
-                        PublishedAt = DateTimeOffset.Parse(item.Snippet.PublishedAtRaw)
-                    }));
-            }
+                var request = _youtubeService.Playlists.List("snippet");
+                request.ChannelId = youtubeConfig.Value.ChannelID;
+                request.MaxResults = 50;
+                request.PageToken = nextPageToken;
 
+                var response = await request.ExecuteAsync();
 
-            nextPageToken = response.NextPageToken;
-        } while (!string.IsNullOrEmpty(nextPageToken));
+                if (response.Items.Any())
+                {
+                    pageCount++;
+                    var playlistsInPage = response.Items
+                        .Where(item => item.Snippet != null)
+                        .Select(item => new Playlist
+                        {
+                            PlaylistId = item.Id,
+                            Title = item.Snippet.Title,
+                            Thumbnail = string.Join("+",
+                                item.Snippet.Thumbnails?.Default__?.Url ?? string.Empty,
+                                item.Snippet.Thumbnails?.Medium?.Url ?? string.Empty,
+                                item.Snippet.Thumbnails?.High?.Url ?? string.Empty,
+                                item.Snippet.Thumbnails?.Maxres?.Url ?? item.Snippet.Thumbnails?.High?.Url ?? string.Empty),
+                            PublishedAt = DateTimeOffset.Parse(item.Snippet.PublishedAtRaw)
+                        }).ToList();
 
-        return playlists;
+                    playlists.AddRange(playlistsInPage);
+                    logger.Debug("Fetched {Count} playlists in page {PageNumber}", playlistsInPage.Count, pageCount);
+                }
+
+                nextPageToken = response.NextPageToken;
+            } while (!string.IsNullOrEmpty(nextPageToken));
+
+            logger.Information("Successfully fetched {TotalCount} playlists from {PageCount} pages", playlists.Count, pageCount);
+            return playlists;
+        }
+        catch (Exception ex)
+        {
+            logger.Error(ex, "Error fetching playlists");
+            throw;
+        }
     }
 
     private async Task<List<Video>> GetVideosInPlaylistAsync(string playlistId)
     {
         var videos = new List<Video>();
         string? nextPageToken = null;
+        int pageCount = 0;
 
-        do
+        try
         {
-            var request = _youtubeService.PlaylistItems.List("snippet");
-            request.PlaylistId = playlistId;
-            request.MaxResults = 50;
-            request.PageToken = nextPageToken;
+            logger.Information("Fetching videos for playlist: {PlaylistId}", playlistId);
 
-            var response = await request.ExecuteAsync();
-            if (response.Items.Any())
+            do
             {
-                if (response.Items.Any(x => x.Snippet.ResourceId.VideoId == "Eg5RrRFVrbg"))
+                var request = _youtubeService.PlaylistItems.List("snippet");
+                request.PlaylistId = playlistId;
+                request.MaxResults = 50;
+                request.PageToken = nextPageToken;
+
+                var response = await request.ExecuteAsync();
+                if (response.Items.Any())
                 {
-                    //normal
-                    var a = response.Items.FirstOrDefault(x => x.Snippet.ResourceId.VideoId == "Eg5RrRFVrbg");
+                    pageCount++;
+                    var videosInPage = response.Items
+                        .Where(item => item.Snippet != null && item.Snippet.ResourceId != null)
+                        .Select(item => new Video
+                        {
+                            VideoId = item.Snippet.ResourceId.VideoId ?? string.Empty,
+                            Title = item.Snippet.Title ?? "Untitled Video",
+                            Thumbnail = string.Join("+",
+                                item.Snippet.Thumbnails?.Default__?.Url ?? string.Empty,
+                                item.Snippet.Thumbnails?.Medium?.Url ?? string.Empty,
+                                item.Snippet.Thumbnails?.High?.Url ?? string.Empty,
+                                item.Snippet.Thumbnails?.Maxres?.Url ?? item.Snippet.Thumbnails?.High?.Url ?? string.Empty),
+                            PublishedAt = DateTimeOffset.Parse(item.Snippet.PublishedAtRaw),
+                            IsPrivate = item.Snippet.Title == "Private video" ||
+                                        item.Snippet.Description == "This video is private.",
+                            IsShort = IsVideoShort(item.Snippet.ResourceId.VideoId, playlistId, item.Snippet.Description),
+                            Description = string.IsNullOrEmpty(item.Snippet.Description) ? null : item.Snippet.Description,
+                        }).ToList();
+
+                    videos.AddRange(videosInPage);
+                    logger.Debug("Fetched {Count} videos in page {PageNumber} for playlist {PlaylistId}", 
+                        videosInPage.Count, pageCount, playlistId);
                 }
 
-                if (response.Items.Any(x => x.Snippet.ResourceId.VideoId == "rB8NWK4QK14"))
-                {
-                    //short
-                    var a = response.Items.FirstOrDefault(x => x.Snippet.ResourceId.VideoId == "rB8NWK4QK14");
-                }
+                nextPageToken = response.NextPageToken;
+            } while (!string.IsNullOrEmpty(nextPageToken));
 
-                videos.AddRange(response.Items
-                    .Where(item => item.Snippet != null && item.Snippet.ResourceId != null)
-                    .Select(item => new Video
-                    {
-                        VideoId = item.Snippet.ResourceId.VideoId ?? string.Empty,
-                        Title = item.Snippet.Title ?? "Untitled Video",
-                        Thumbnail = string.Join("+",
-                            item.Snippet.Thumbnails?.Default__?.Url ?? string.Empty,
-                            item.Snippet.Thumbnails?.Medium?.Url ?? string.Empty,
-                            item.Snippet.Thumbnails?.High?.Url ?? string.Empty,
-                            item.Snippet.Thumbnails?.Maxres?.Url ?? item.Snippet.Thumbnails?.High?.Url ?? string.Empty),
-                        PublishedAt = DateTimeOffset.Parse(item.Snippet.PublishedAtRaw),
-                        IsPrivate = item.Snippet.Title == "Private video" ||
-                                    item.Snippet.Description == "This video is private.",
-                        IsShort = IsVideoShort(item.Snippet.ResourceId.VideoId, playlistId, item.Snippet.Description),
-                        Description = string.IsNullOrEmpty(item.Snippet.Description) ? null : item.Snippet.Description,
-                    }));
-            }
-
-            nextPageToken = response.NextPageToken;
-        } while (!string.IsNullOrEmpty(nextPageToken));
-
-        return videos;
+            logger.Information("Successfully fetched {TotalCount} videos from {PageCount} pages for playlist {PlaylistId}", 
+                videos.Count, pageCount, playlistId);
+            return videos;
+        }
+        catch (Exception ex)
+        {
+            logger.Error(ex, "Error fetching videos for playlist {PlaylistId}", playlistId);
+            throw;
+        }
     }
 
     private async Task<(List<Video>, List<PlaylistVideo>)> SearchVideosAsync(int maxResults)
