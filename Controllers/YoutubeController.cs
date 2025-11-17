@@ -211,26 +211,40 @@ public class YoutubeController
 
         return Ok("Notification received");
     }
-    
-    
+
+
     [HttpPost("push-dlt")]
     public async Task<IActionResult> PushNotificationDlt([FromBody] string payload, [FromQuery] string challenge)
     {
-        if (!string.IsNullOrEmpty(challenge))
+        try
         {
-            return Ok(challenge);
+            if (!string.IsNullOrEmpty(challenge))
+            {
+                return Ok(challenge);
+            }
+
+            var query =
+                "INSERT INTO youtube_notifications (video_id, title, published_at, notification_data, created_at) " +
+                "VALUES (@p0, @p1, @p2, @p3, CURRENT_TIMESTAMP)";
+
+            // Veriyi veritabanına kaydet
+            await _context.Database.ExecuteSqlRawAsync(query, null, null, null, payload);
+
+            return Ok("Notification received");
+        }
+        catch (Exception e)
+        {
+            var query =
+                "INSERT INTO youtube_notifications (video_id, title, published_at, notification_data, created_at) " +
+                "VALUES (@p0, @p1, @p2, @p3, CURRENT_TIMESTAMP)";
+
+            // Veriyi veritabanına kaydet
+            await _context.Database.ExecuteSqlRawAsync(query, null, null, null, e.Message);
         }
 
-        var query = 
-            "INSERT INTO youtube_notifications (video_id, title, published_at, notification_data, created_at) " +
-            "VALUES (@p0, @p1, @p2, @p3, CURRENT_TIMESTAMP)";
-
-        // Veriyi veritabanına kaydet
-        await _context.Database.ExecuteSqlRawAsync(query, null, null, null, payload);
-
         return Ok("Notification received");
+        
     }
-
 
 
     [HttpPost("subscribe")]
@@ -320,15 +334,11 @@ public class YoutubeController
     }
 }
 
-
 public class YoutubeNotificationModel
 {
-    [XmlElement("video_id")]
-    public string VideoId { get; set; }
+    [XmlElement("video_id")] public string VideoId { get; set; }
 
-    [XmlElement("title")]
-    public string Title { get; set; }
+    [XmlElement("title")] public string Title { get; set; }
 
-    [XmlElement("published")]
-    public string PublishedAt { get; set; }
+    [XmlElement("published")] public string PublishedAt { get; set; }
 }
