@@ -6,6 +6,7 @@ using Newtonsoft.Json.Linq;
 using Renci.SshNet;
 using YoutubeApiSynchronize.Context;
 using YoutubeApiSynchronize.Dto;
+using YoutubeApiSynchronize.Entity;
 using YoutubeApiSynchronize.Options;
 using YoutubeApiSynchronize.Services;
 using ILogger = Serilog.ILogger;
@@ -238,16 +239,15 @@ public class YoutubeController
             // YouTube notification'dan məlumatları çıxar
             var (videoId, title, publishedAt) = ParseYouTubeNotification(payload);
 
-            var query =
-                "INSERT INTO youtube_notifications (video_id, title, published_at, notification_data, created_at) " +
-                "VALUES (@p0, @p1, @p2, @p3, CURRENT_TIMESTAMP)";
-
-            await _context.Database.ExecuteSqlRawAsync(query,
-                videoId ?? string.Empty,
-                title ?? string.Empty,
-                publishedAt ?? DateTime.UtcNow,
-                payload);
-
+            YouTubeNotification youtubeNotificationModel = new YouTubeNotification()
+            {
+                NotificationData = title,
+                VideoId = videoId,
+                Title = title,
+            };
+            
+            _context.YouTubeNotifications.Add(youtubeNotificationModel);
+            _context.SaveChanges();
             return Ok("Notification received");
         }
         catch (Exception e)
@@ -287,8 +287,19 @@ public class YoutubeController
             if (DateTime.TryParse(publishedAtStr, out var parsedDate))
             {
                 publishedAt = parsedDate;
+                
             }
 
+            YouTubeNotification youtubeNotificationModel = new YouTubeNotification()
+            {
+                NotificationData = nsManager.ToString(),
+                VideoId = videoId,
+                Title = title,
+            };
+            
+            _context.YouTubeNotifications.Add(youtubeNotificationModel);
+            _context.SaveChanges();
+            
             return (videoId, title, publishedAt);
         }
         catch (Exception ex)

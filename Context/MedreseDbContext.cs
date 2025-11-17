@@ -12,6 +12,8 @@ public class MedreseDbContext(DbContextOptions<MedreseDbContext> options, IConfi
     public DbSet<PlaylistVideo> PlaylistVideos { get; set; }
 
     public DbSet<ChannelStat> ChannelStats { get; set; }
+    
+    public DbSet<YouTubeNotification> YouTubeNotifications { get; set; }
 
     // protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     // {
@@ -28,5 +30,9 @@ public class MedreseDbContext(DbContextOptions<MedreseDbContext> options, IConfi
 
         modelBuilder.Entity<Playlist>().HasQueryFilter(e => e.IsOldChannel == false);
         modelBuilder.Entity<Video>().HasQueryFilter(e => e.IsOldChannel == false);
+        
+        modelBuilder.Entity<YouTubeNotification>()
+            .Property(n => n.CreatedAt)
+            .HasDefaultValueSql("CURRENT_TIMESTAMP"); 
     }
 }
