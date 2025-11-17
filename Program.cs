@@ -45,6 +45,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<YoutubeService>();
+builder.Services.AddScoped<PubSubService>();
 builder.Services.Configure<YoutubeConfig>(builder.Configuration.GetSection("YoutubeConfig"));
 builder.Services.Configure<LogOptions>(builder.Configuration.GetSection("LogConfig"));
 builder.Services.AddHealthChecks();

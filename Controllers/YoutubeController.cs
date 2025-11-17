@@ -2,6 +2,7 @@ using System.Xml.Linq;
 using System.Xml.Serialization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Renci.SshNet;
 using YoutubeApiSynchronize.Context;
@@ -10,48 +11,40 @@ using YoutubeApiSynchronize.Entity;
 using YoutubeApiSynchronize.Options;
 using YoutubeApiSynchronize.Services;
 using ILogger = Serilog.ILogger;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace YoutubeApiSynchronize.Controllers;
 
 [ApiController]
 [Route("/api/[controller]")]
-public class YoutubeController
+public class YoutubeController(
+    YoutubeService youtubeService,
+    IConfiguration configuration,
+    ILogger logger,
+    MedreseDbContext context,
+    PubSubService pubSubService)
     : ControllerBase
 {
-    private readonly YoutubeService _youtubeService;
-    private readonly IConfiguration _configuration;
-    private readonly ILogger _logger;
-    private readonly MedreseDbContext _context;
-
-    public YoutubeController(YoutubeService youtubeService, IConfiguration configuration,
-        ILogger logger, MedreseDbContext context)
-    {
-        _youtubeService = youtubeService;
-        _configuration = configuration;
-        _logger = logger;
-        _context = context;
-    }
-
     [HttpGet("env")]
     public IActionResult GetEnv()
     {
         try
         {
-            _logger.Information("GetEnv endpoint called");
-            var db = _configuration.GetSection("DB").Get<DatabaseSettings>()!;
+            logger.Information("GetEnv endpoint called");
+            var db = configuration.GetSection("DB").Get<DatabaseSettings>()!;
 
-            _logger.Debug("Environment configuration retrieved successfully");
+            logger.Debug("Environment configuration retrieved successfully");
             return Ok(
                 new
                 {
-                    TestValue = _configuration["Test:Value"],
+                    TestValue = configuration["Test:Value"],
                     db.ConnectionString,
                 }
             );
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Error in GetEnv endpoint");
+            logger.Error(ex, "Error in GetEnv endpoint");
             return StatusCode(500, new { error = "Internal server error" });
         }
     }
@@ -61,14 +54,14 @@ public class YoutubeController
     {
         try
         {
-            _logger.Information("Fetching video from database: {VideoId}", videoId);
-            var result = await _youtubeService.GetVideoFromDb(videoId);
-            _logger.Debug("Video retrieved from database: {VideoId}", videoId);
+            logger.Information("Fetching video from database: {VideoId}", videoId);
+            var result = await youtubeService.GetVideoFromDb(videoId);
+            logger.Debug("Video retrieved from database: {VideoId}", videoId);
             return Ok(result);
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Error fetching video from database: {VideoId}", videoId);
+            logger.Error(ex, "Error fetching video from database: {VideoId}", videoId);
             return StatusCode(500, new { error = "Internal server error" });
         }
     }
@@ -78,14 +71,14 @@ public class YoutubeController
     {
         try
         {
-            _logger.Information("Fetching video from YouTube: {VideoId}", videoId);
-            var result = await _youtubeService.GetVideoFromYoutube(videoId);
-            _logger.Debug("Video retrieved from YouTube: {VideoId}", videoId);
+            logger.Information("Fetching video from YouTube: {VideoId}", videoId);
+            var result = await youtubeService.GetVideoFromYoutube(videoId);
+            logger.Debug("Video retrieved from YouTube: {VideoId}", videoId);
             return Ok(result);
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Error fetching video from YouTube: {VideoId}", videoId);
+            logger.Error(ex, "Error fetching video from YouTube: {VideoId}", videoId);
             return StatusCode(500, new { error = "Internal server error" });
         }
     }
@@ -95,14 +88,14 @@ public class YoutubeController
     {
         try
         {
-            _logger.Information("Updating video: {VideoId}", videoId);
-            var result = await _youtubeService.UpdateByVideoId(videoId);
-            _logger.Information("Video updated successfully: {VideoId}", videoId);
+            logger.Information("Updating video: {VideoId}", videoId);
+            var result = await youtubeService.UpdateByVideoId(videoId);
+            logger.Information("Video updated successfully: {VideoId}", videoId);
             return Ok(result);
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Error updating video: {VideoId}", videoId);
+            logger.Error(ex, "Error updating video: {VideoId}", videoId);
             return StatusCode(500, new { error = "Internal server error" });
         }
     }
@@ -112,19 +105,19 @@ public class YoutubeController
     {
         try
         {
-            _logger.Information("YouTube synchronization started via API endpoint");
-            var result = await _youtubeService.SyncAsync();
-            _logger.Information("YouTube synchronization completed successfully");
+            logger.Information("YouTube synchronization started via API endpoint");
+            var result = await youtubeService.SyncAsync();
+            logger.Information("YouTube synchronization completed successfully");
             return Ok(result);
         }
         catch (InvalidOperationException ex)
         {
-            _logger.Warning(ex, "Rate limit exceeded during synchronization");
+            logger.Warning(ex, "Rate limit exceeded during synchronization");
             return StatusCode(429, new { Message = ex.Message });
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Error during YouTube synchronization");
+            logger.Error(ex, "Error during YouTube synchronization");
             return StatusCode(500, new { error = "Internal server error" });
         }
     }
@@ -135,38 +128,38 @@ public class YoutubeController
     {
         try
         {
-            _logger.Information("Jenkins control request: status={Status}", status);
+            logger.Information("Jenkins control request: status={Status}", status);
 
             if (status != 0 && status != 1)
             {
-                _logger.Warning("Invalid Jenkins status parameter: {Status}", status);
+                logger.Warning("Invalid Jenkins status parameter: {Status}", status);
                 return BadRequest("Geçersiz parametre. Sadece 0 veya 1 olmalı.");
             }
 
-            using var client = new SshClient(_configuration["SERVER_HOST"], _configuration["SERVER_USER_NAME"],
-                _configuration["SERVER_PASSWORD"]);
+            using var client = new SshClient(configuration["SERVER_HOST"], configuration["SERVER_USER_NAME"],
+                configuration["SERVER_PASSWORD"]);
 
-            _logger.Debug("Connecting to SSH server");
+            logger.Debug("Connecting to SSH server");
             client.Connect();
 
             if (status == 1)
             {
-                _logger.Information("Starting Jenkins service");
+                logger.Information("Starting Jenkins service");
                 client.RunCommand("sudo systemctl start jenkins");
             }
             else
             {
-                _logger.Information("Stopping Jenkins service");
+                logger.Information("Stopping Jenkins service");
                 client.RunCommand("sudo systemctl stop jenkins");
             }
 
             client.Disconnect();
-            _logger.Information("Jenkins service {Action} successfully", status == 1 ? "started" : "stopped");
+            logger.Information("Jenkins service {Action} successfully", status == 1 ? "started" : "stopped");
             return Ok(new { message = $"Jenkins {(status == 1 ? "başlatıldı" : "durduruldu")}" });
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Error controlling Jenkins service");
+            logger.Error(ex, "Error controlling Jenkins service");
             return StatusCode(500, new { error = "Internal server error" });
         }
     }
@@ -176,45 +169,52 @@ public class YoutubeController
     {
         try
         {
-            _logger.Information("Channel statistics request received");
-            var result = await _youtubeService.UpdateChannelStatsAsync();
-            _logger.Information("Channel statistics retrieved successfully");
+            logger.Information("Channel statistics request received");
+            var result = await youtubeService.UpdateChannelStatsAsync();
+            logger.Information("Channel statistics retrieved successfully");
             return result;
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Error retrieving channel statistics");
+            logger.Error(ex, "Error retrieving channel statistics");
             return new { error = "Internal server error" };
         }
     }
 
 
     [HttpPost("push")]
-    public async Task<IActionResult> PushNotification([FromBody] string payload, [FromQuery] string challenge)
+    public async Task<IActionResult> PushNotification([FromBody] object payload, [FromQuery] string challenge)
     {
-        if (!string.IsNullOrEmpty(challenge))
+        try
         {
-            return Ok(challenge);
+            string jsonPayload = JsonConvert.SerializeObject(payload);
+
+            YouTubeNotification youtubeNotificationModel = new YouTubeNotification()
+            {
+                NotificationData = jsonPayload,
+                Title = challenge
+            };
+
+            await context.YouTubeNotifications.AddAsync(youtubeNotificationModel);
+            await context.SaveChangesAsync();
+
+
+            return Ok("Notification received");
         }
-
-        var json = JObject.Parse(payload);
-        var videoId = json["video_id"]?.ToString();
-        var title = json["title"]?.ToString();
-        var publishedAt = json["published"]?.ToString();
-
-        YouTubeNotification youtubeNotificationModel = new YouTubeNotification()
+        catch (Exception e)
         {
-            NotificationData = title,
-            VideoId = videoId,
-            Title = title,
-        };
-            
-        await _context.YouTubeNotifications.AddAsync(youtubeNotificationModel);
-        await _context.SaveChangesAsync();
+            YouTubeNotification youtubeNotificationModel = new YouTubeNotification()
+            {
+                NotificationData = "ERROR",
+                VideoId = e.GetType().Name,
+                Title = $"Error: {e.Message}\nStack: {e.StackTrace}",
+            };
 
-        Console.WriteLine($"Video ID: {videoId}, Title: {title}, Published: {publishedAt}");
+            await context.YouTubeNotifications.AddAsync(youtubeNotificationModel);
+            await context.SaveChangesAsync();
 
-        return Ok("Notification received");
+            return StatusCode(500, "Internal server error");
+        }
     }
 
 
@@ -227,31 +227,14 @@ public class YoutubeController
             using var reader = new StreamReader(Request.Body);
             var payload = await reader.ReadToEndAsync();
 
-            // Query parametrlərini yoxla
-            var challenge = Request.Query["challenge"].FirstOrDefault();
-
-            if (!string.IsNullOrEmpty(challenge))
-            {
-                return Ok(challenge);
-            }
-
-            if (string.IsNullOrEmpty(payload))
-            {
-                return BadRequest("Payload is empty");
-            }
-
-            // YouTube notification'dan məlumatları çıxar
-            var (videoId, title, publishedAt) = ParseYouTubeNotification(payload);
 
             YouTubeNotification youtubeNotificationModel = new YouTubeNotification()
             {
-                NotificationData = title,
-                VideoId = videoId,
-                Title = title,
+                NotificationData = payload
             };
-            
-            await _context.YouTubeNotifications.AddAsync(youtubeNotificationModel);
-            await _context.SaveChangesAsync();
+
+            await context.YouTubeNotifications.AddAsync(youtubeNotificationModel);
+            await context.SaveChangesAsync();
 
             return Ok("Notification received");
         }
@@ -261,12 +244,12 @@ public class YoutubeController
             {
                 NotificationData = "ERROR",
                 VideoId = e.GetType().Name,
-                Title =     $"Error: {e.Message}\nStack: {e.StackTrace}",
+                Title = $"Error: {e.Message}\nStack: {e.StackTrace}",
             };
-            
-            await _context.YouTubeNotifications.AddAsync(youtubeNotificationModel);
-            await _context.SaveChangesAsync();
-            
+
+            await context.YouTubeNotifications.AddAsync(youtubeNotificationModel);
+            await context.SaveChangesAsync();
+
             return StatusCode(500, "Internal server error");
         }
     }
@@ -291,7 +274,6 @@ public class YoutubeController
             if (DateTime.TryParse(publishedAtStr, out var parsedDate))
             {
                 publishedAt = parsedDate;
-                
             }
 
             YouTubeNotification youtubeNotificationModel = new YouTubeNotification()
@@ -300,23 +282,21 @@ public class YoutubeController
                 VideoId = videoId,
                 Title = title,
             };
-            
-            _context.YouTubeNotifications.Add(youtubeNotificationModel);
-            _context.SaveChanges();
-            
+
+            context.YouTubeNotifications.Add(youtubeNotificationModel);
+            context.SaveChanges();
+
             return (videoId, title, publishedAt);
         }
         catch (Exception ex)
         {
-            
-            
             YouTubeNotification youtubeNotificationModel = new YouTubeNotification()
             {
                 NotificationData = ex.ToString(),
             };
-            
-            _context.YouTubeNotifications.Add(youtubeNotificationModel);
-            _context.SaveChanges();
+
+            context.YouTubeNotifications.Add(youtubeNotificationModel);
+            context.SaveChanges();
             // Parse error olarsa, əsas məlumatları saxla
             return (null, "Parse Error", DateTime.UtcNow);
         }
@@ -325,95 +305,15 @@ public class YoutubeController
     [HttpPost("subscribe")]
     public async Task<IActionResult> Subscribe([FromBody] string payload, [FromQuery] string challenge)
     {
-        string channelId = "UCN22jHS7MPBp38ZWZemt7i";
-        string callbackUrl = "https://api-ytb.nizamiyyemedresesi.az/api/Youtube/push";
-
-        string hubUrl = "https://pubsubhubbub.appspot.com/subscribe";
-        string topicUrl = $"https://www.youtube.com/feeds/videos.xml?channel_id={channelId}";
-
-        var content = new FormUrlEncodedContent(new[]
-        {
-            new KeyValuePair<string, string>("hub.callback", callbackUrl),
-            new KeyValuePair<string, string>("hub.mode", "subscribe"),
-            new KeyValuePair<string, string>("hub.topic", topicUrl),
-            new KeyValuePair<string, string>("hub.verify", "sync")
-        });
-
-        using (var client = new HttpClient())
-        {
-            using var response = await client.PostAsync(hubUrl, content);
-
-            _logger.Information(response.IsSuccessStatusCode
-                ? "Successfully subscribed to the channel."
-                : $"Failed to subscribe. Status code: {response.StatusCode}");
-        }
-
+        await pubSubService.SubscribeToTopic(payload, challenge);
         return Ok("Sucess");
     }
 
     [HttpPost("UnsubscribeAndUpdateCallbackUrl")]
     public async Task<IActionResult> UnsubscribeAndUpdateCallbackUrl()
     {
-        string channelId = "UCN22jHS7MPBp38ZWZemt7i";
-        string newCallbackUrl = "https://api-ytb.nizamiyyemedresesi.az/api/Youtube/push";
-        string oldCallbackUrl = "https://api-ytb.nizamiyyemedresesi.az/api/youtube-pubsub/push";
-        string hubUrl = "https://pubsubhubbub.appspot.com/subscribe";
-        string topicUrl = $"https://www.youtube.com/feeds/videos.xml?channel_id={channelId}";
-
-        // Unsubscribe işlemi (Eski callback URL ile)
-        var unsubscribeContent = new FormUrlEncodedContent(new[]
-        {
-            new KeyValuePair<string, string>("hub.callback", oldCallbackUrl),
-            new KeyValuePair<string, string>("hub.mode", "unsubscribe"),
-            new KeyValuePair<string, string>("hub.topic", topicUrl),
-        });
-
-        using (var client = new HttpClient())
-        {
-            var unsubscribeResponse = await client.PostAsync(hubUrl, unsubscribeContent);
-            if (unsubscribeResponse.IsSuccessStatusCode)
-            {
-                Console.WriteLine("Unsubscribed successfully.");
-            }
-            else
-            {
-                Console.WriteLine($"Failed to unsubscribe. Status code: {unsubscribeResponse.StatusCode}");
-                return BadRequest("Unsubscribe failed.");
-            }
-        }
-
-        // Subscribe işlemi (Yeni callback URL ile)
-        var subscribeContent = new FormUrlEncodedContent(new[]
-        {
-            new KeyValuePair<string, string>("hub.callback", newCallbackUrl),
-            new KeyValuePair<string, string>("hub.mode", "subscribe"),
-            new KeyValuePair<string, string>("hub.topic", topicUrl),
-            new KeyValuePair<string, string>("hub.verify", "sync")
-        });
-
-        using (var client = new HttpClient())
-        {
-            var subscribeResponse = await client.PostAsync(hubUrl, subscribeContent);
-            if (subscribeResponse.IsSuccessStatusCode)
-            {
-                Console.WriteLine("Successfully subscribed with new callback URL.");
-            }
-            else
-            {
-                Console.WriteLine($"Failed to subscribe. Status code: {subscribeResponse.StatusCode}");
-                return BadRequest("Subscribe failed.");
-            }
-        }
+        await pubSubService.UnsubscribeAndUpdateCallbackUrl();
 
         return Ok("Subscription updated successfully.");
     }
-}
-
-public class YoutubeNotificationModel
-{
-    [XmlElement("video_id")] public string VideoId { get; set; }
-
-    [XmlElement("title")] public string Title { get; set; }
-
-    [XmlElement("published")] public string PublishedAt { get; set; }
 }
