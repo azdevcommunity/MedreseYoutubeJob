@@ -183,124 +183,39 @@ public class YoutubeController(
 
 
     [HttpPost("push")]
-    public async Task<IActionResult> PushNotification( )
+    public async Task<IActionResult> PushNotification()
     {
-        try
+        using var reader = new StreamReader(Request.Body);
+        var payload = await reader.ReadToEndAsync();
+
+        YouTubeNotification youtubeNotificationModel = new YouTubeNotification()
         {
-            // Request bodysini oxu
-            using var reader = new StreamReader(Request.Body);
-            var payload = await reader.ReadToEndAsync();
+            NotificationData = payload,
+        };
 
-            YouTubeNotification youtubeNotificationModel = new YouTubeNotification()
-            {
-                NotificationData = payload,
-            };
-
-            await context.YouTubeNotifications.AddAsync(youtubeNotificationModel);
-            await context.SaveChangesAsync();
+        await context.YouTubeNotifications.AddAsync(youtubeNotificationModel);
+        await context.SaveChangesAsync();
 
 
-            return Ok("Notification received");
-        }
-        catch (Exception e)
-        {
-            YouTubeNotification youtubeNotificationModel = new YouTubeNotification()
-            {
-                NotificationData = "ERROR",
-                VideoId = e.GetType().Name,
-                Title = $"Error: {e.Message}\nStack: {e.StackTrace}",
-            };
-
-            await context.YouTubeNotifications.AddAsync(youtubeNotificationModel);
-            await context.SaveChangesAsync();
-
-            return StatusCode(500, "Internal server error");
-        }
+        return Ok("Notification received");
     }
 
 
     [HttpPost("push-dlt")]
     public async Task<IActionResult> PushNotificationDlt()
     {
-        try
+        using var reader = new StreamReader(Request.Body);
+        var payload = await reader.ReadToEndAsync();
+
+        YouTubeNotification youtubeNotificationModel = new YouTubeNotification()
         {
-            // Request bodysini oxu
-            using var reader = new StreamReader(Request.Body);
-            var payload = await reader.ReadToEndAsync();
+            NotificationData = payload
+        };
 
+        await context.YouTubeNotifications.AddAsync(youtubeNotificationModel);
+        await context.SaveChangesAsync();
 
-            YouTubeNotification youtubeNotificationModel = new YouTubeNotification()
-            {
-                NotificationData = payload
-            };
-
-            await context.YouTubeNotifications.AddAsync(youtubeNotificationModel);
-            await context.SaveChangesAsync();
-
-            return Ok("Notification received");
-        }
-        catch (Exception e)
-        {
-            YouTubeNotification youtubeNotificationModel = new YouTubeNotification()
-            {
-                NotificationData = "ERROR",
-                VideoId = e.GetType().Name,
-                Title = $"Error: {e.Message}\nStack: {e.StackTrace}",
-            };
-
-            await context.YouTubeNotifications.AddAsync(youtubeNotificationModel);
-            await context.SaveChangesAsync();
-
-            return StatusCode(500, "Internal server error");
-        }
-    }
-
-    private (string videoId, string title, DateTime? publishedAt) ParseYouTubeNotification(string payload)
-    {
-        try
-        {
-            // XML parsing
-            var doc = new System.Xml.XmlDocument();
-            doc.LoadXml(payload);
-
-            var nsManager = new System.Xml.XmlNamespaceManager(doc.NameTable);
-            nsManager.AddNamespace("yt", "http://www.youtube.com/xml/schemas/2015");
-            nsManager.AddNamespace("atom", "http://www.w3.org/2005/Atom");
-
-            var videoId = doc.SelectSingleNode("//yt:videoId", nsManager)?.InnerText;
-            var title = doc.SelectSingleNode("//atom:title", nsManager)?.InnerText;
-            var publishedAtStr = doc.SelectSingleNode("//atom:published", nsManager)?.InnerText;
-
-            DateTime? publishedAt = null;
-            if (DateTime.TryParse(publishedAtStr, out var parsedDate))
-            {
-                publishedAt = parsedDate;
-            }
-
-            YouTubeNotification youtubeNotificationModel = new YouTubeNotification()
-            {
-                NotificationData = nsManager.ToString(),
-                VideoId = videoId,
-                Title = title,
-            };
-
-            context.YouTubeNotifications.Add(youtubeNotificationModel);
-            context.SaveChanges();
-
-            return (videoId, title, publishedAt);
-        }
-        catch (Exception ex)
-        {
-            YouTubeNotification youtubeNotificationModel = new YouTubeNotification()
-            {
-                NotificationData = ex.ToString(),
-            };
-
-            context.YouTubeNotifications.Add(youtubeNotificationModel);
-            context.SaveChanges();
-            // Parse error olarsa, əsas məlumatları saxla
-            return (null, "Parse Error", DateTime.UtcNow);
-        }
+        return Ok("Notification received");
     }
 
     [HttpPost("subscribe")]

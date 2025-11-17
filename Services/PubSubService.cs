@@ -4,13 +4,14 @@ using ILogger = Serilog.ILogger;
 
 public class PubSubService(ILogger logger)
 {
+    private const string ChannelId = "UCN22jHS7MPBp38ZWZemt7iQ";
+    private const string HubUrl = "https://pubsubhubbub.appspot.com/subscribe";
+
     public async Task SubscribeToTopic(string payload, string challenge)
     {
-        string channelId = "UCN22jHS7MPBp38ZWZemt7i";
         string callbackUrl = "https://api-ytb.nizamiyyemedresesi.az/api/Youtube/push";
 
-        string hubUrl = "https://pubsubhubbub.appspot.com/subscribe";
-        string topicUrl = $"https://www.youtube.com/feeds/videos.xml?channel_id={channelId}";
+        string topicUrl = $"https://www.youtube.com/feeds/videos.xml?channel_id={ChannelId}";
 
         var content = new FormUrlEncodedContent(new[]
         {
@@ -21,7 +22,7 @@ public class PubSubService(ILogger logger)
         });
 
         using var client = new HttpClient();
-        using var response = await client.PostAsync(hubUrl, content);
+        using var response = await client.PostAsync(HubUrl, content);
 
         logger.Information(response.IsSuccessStatusCode
             ? "Successfully subscribed to the channel."
@@ -30,13 +31,10 @@ public class PubSubService(ILogger logger)
 
     public async Task UnsubscribeAndUpdateCallbackUrl()
     {
-        string channelId = "UCN22jHS7MPBp38ZWZemt7i";
         string newCallbackUrl = "https://api-ytb.nizamiyyemedresesi.az/api/Youtube/push";
         string oldCallbackUrl = "https://api-ytb.nizamiyyemedresesi.az/api/youtube-pubsub/push";
-        string hubUrl = "https://pubsubhubbub.appspot.com/subscribe";
-        string topicUrl = $"https://www.youtube.com/feeds/videos.xml?channel_id={channelId}";
+        string topicUrl = $"https://www.youtube.com/feeds/videos.xml?channel_id={ChannelId}";
 
-        // Unsubscribe işlemi (Eski callback URL ile)
         var unsubscribeContent = new FormUrlEncodedContent(new[]
         {
             new KeyValuePair<string, string>("hub.callback", oldCallbackUrl),
@@ -46,7 +44,7 @@ public class PubSubService(ILogger logger)
 
         using (var client = new HttpClient())
         {
-            var unsubscribeResponse = await client.PostAsync(hubUrl, unsubscribeContent);
+            var unsubscribeResponse = await client.PostAsync(HubUrl, unsubscribeContent);
             if (unsubscribeResponse.IsSuccessStatusCode)
             {
                 Console.WriteLine("Unsubscribed successfully.");
@@ -58,7 +56,6 @@ public class PubSubService(ILogger logger)
             }
         }
 
-        // Subscribe işlemi (Yeni callback URL ile)
         var subscribeContent = new FormUrlEncodedContent(new[]
         {
             new KeyValuePair<string, string>("hub.callback", newCallbackUrl),
@@ -69,7 +66,7 @@ public class PubSubService(ILogger logger)
 
         using (var client = new HttpClient())
         {
-            var subscribeResponse = await client.PostAsync(hubUrl, subscribeContent);
+            var subscribeResponse = await client.PostAsync(HubUrl, subscribeContent);
             if (subscribeResponse.IsSuccessStatusCode)
             {
                 Console.WriteLine("Successfully subscribed with new callback URL.");
