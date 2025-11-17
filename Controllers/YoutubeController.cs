@@ -204,6 +204,9 @@ public class YoutubeController(
     public async Task<IActionResult> Push([FromQuery] string hubMode, [FromQuery] string hubTopic,
         [FromQuery] string hubChallenge, [FromQuery] int hubLeaseSeconds)
     {
+        var origin = Request.Headers["Origin"].ToString();
+        logger.Information($"Request received from Origin: {origin}");
+
         var a = new
         {
             hubMode = hubMode,
@@ -220,7 +223,7 @@ public class YoutubeController(
 
         await context.YouTubeNotifications.AddAsync(youtubeNotificationModel);
         await context.SaveChangesAsync();
-        
+
         return Ok("Notification received");
     }
 
