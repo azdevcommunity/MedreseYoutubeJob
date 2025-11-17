@@ -1,7 +1,9 @@
 using System.Xml.Linq;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
 using Renci.SshNet;
+using YoutubeApiSynchronize.Context;
 using YoutubeApiSynchronize.Dto;
 using YoutubeApiSynchronize.Options;
 using YoutubeApiSynchronize.Services;
@@ -17,13 +19,15 @@ public class YoutubeController
     private readonly YoutubeService _youtubeService;
     private readonly IConfiguration _configuration;
     private readonly ILogger _logger;
+    private readonly MedreseDbContext _context;
 
     public YoutubeController(YoutubeService youtubeService, IConfiguration configuration,
-        ILogger logger)
+        ILogger logger, MedreseDbContext context)
     {
         _youtubeService = youtubeService;
         _configuration = configuration;
         _logger = logger;
+        _context = context;
     }
 
     [HttpGet("env")]
@@ -188,13 +192,19 @@ public class YoutubeController
     {
         if (!string.IsNullOrEmpty(challenge))
         {
-            return Ok(challenge); 
+            return Ok(challenge);
         }
 
         var json = JObject.Parse(payload);
         var videoId = json["video_id"]?.ToString();
         var title = json["title"]?.ToString();
         var publishedAt = json["published"]?.ToString();
+
+        var query =
+            "INSERT INTO youtube_notifications (video_id, title, published_at, notification_data, created_at) " +
+            "VALUES (@p0, @p1, @p2, @p3, CURRENT_TIMESTAMP)";
+
+        await _context.Database.ExecuteSqlRawAsync(query, videoId, title, publishedAt, payload);
 
         Console.WriteLine($"Video ID: {videoId}, Title: {title}, Published: {publishedAt}");
 
@@ -205,7 +215,6 @@ public class YoutubeController
     [HttpPost("subscribe")]
     public async Task<IActionResult> Subscribe([FromBody] string payload, [FromQuery] string challenge)
     {
-
         string channelId = "UCN22jHS7MPBp38ZWZemt7i";
         string callbackUrl = "https://api-ytb.nizamiyyemedresesi.az/api/youtube-pubsub/push";
 
