@@ -11,16 +11,6 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-Log.Logger = new LoggerConfiguration()
-    .WriteTo.Console()
-    .CreateLogger();
-
-builder.Services.AddLogging(cfg =>
-{
-    cfg.AddConsole();
-    cfg.AddDebug();
-    cfg.AddSerilog();
-});
 builder.Services.AddScoped<YoutubeService>();
 builder.Services.Configure<YoutubeConfig>(builder.Configuration.GetSection("YoutubeConfig"));
 builder.Services.Configure<LogOptions>(builder.Configuration.GetSection("LogConfig"));
