@@ -200,6 +200,30 @@ public class YoutubeController(
         return Ok("Notification received");
     }
 
+    [HttpGet("push")]
+    public async Task<IActionResult> Push([FromQuery] string hubMode, [FromQuery] string hubTopic,
+        [FromQuery] string hubChallenge, [FromQuery] int hubLeaseSeconds)
+    {
+        var a = new
+        {
+            hubMode = hubMode,
+            hubTopic = hubTopic,
+            hubChallenge = hubChallenge,
+            hubLeaseSeconds = hubLeaseSeconds,
+            message = " Bu youtubedan gelir"
+        };
+
+        YouTubeNotification youtubeNotificationModel = new YouTubeNotification()
+        {
+            NotificationData = JsonSerializer.Serialize(a)
+        };
+
+        await context.YouTubeNotifications.AddAsync(youtubeNotificationModel);
+        await context.SaveChangesAsync();
+        
+        return Ok("Notification received");
+    }
+
 
     [HttpPost("push-dlt")]
     public async Task<IActionResult> PushNotificationDlt()
