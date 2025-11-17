@@ -139,7 +139,7 @@ public class YoutubeController
 
             using var client = new SshClient(_configuration["SERVER_HOST"], _configuration["SERVER_USER_NAME"],
                 _configuration["SERVER_PASSWORD"]);
-            
+
             _logger.Debug("Connecting to SSH server");
             client.Connect();
 
@@ -183,31 +183,52 @@ public class YoutubeController
     }
 
 
-    [Route("api/[controller]")]
-    [ApiController]
-    public class YouTubeController : ControllerBase
+    [HttpPost("push")]
+    public async Task<IActionResult> PushNotification([FromBody] string payload, [FromQuery] string challenge)
     {
-        [HttpPost("push")]
-        public async Task<IActionResult> PushNotification([FromBody] string payload, [FromQuery] string challenge)
+        if (!string.IsNullOrEmpty(challenge))
         {
-            // İlk bildirimde gelen hub.challenge parametresini doğrulama
-            if (!string.IsNullOrEmpty(challenge))
-            {
-                return Ok(challenge); // Challenge'ı geri göndererek doğrulama sağlanır
-            }
-
-            // Gelen bildirim verisini işleme
-            var json = JObject.Parse(payload);
-            var videoId = json["video_id"]?.ToString();
-            var title = json["title"]?.ToString();
-            var publishedAt = json["published"]?.ToString();
-
-            // Burada veriyi işleyebilirsiniz (veritabanına kaydedebilir veya bildirim gönderebilirsiniz)
-            Console.WriteLine($"Video ID: {videoId}, Title: {title}, Published: {publishedAt}");
-
-            return Ok("Notification received");
+            return Ok(challenge); 
         }
+
+        var json = JObject.Parse(payload);
+        var videoId = json["video_id"]?.ToString();
+        var title = json["title"]?.ToString();
+        var publishedAt = json["published"]?.ToString();
+
+        Console.WriteLine($"Video ID: {videoId}, Title: {title}, Published: {publishedAt}");
+
+        return Ok("Notification received");
     }
 
- 
+
+    [HttpPost("subscribe")]
+    public async Task<IActionResult> Subscribe([FromBody] string payload, [FromQuery] string challenge)
+    {
+
+        string channelId = "UCN22jHS7MPBp38ZWZemt7i";
+        string callbackUrl = "https://api-ytb.nizamiyyemedresesi.az/api/youtube-pubsub/push";
+
+        string hubUrl = "https://pubsubhubbub.appspot.com/subscribe";
+        string topicUrl = $"https://www.youtube.com/feeds/videos.xml?channel_id={channelId}";
+
+        var content = new FormUrlEncodedContent(new[]
+        {
+            new KeyValuePair<string, string>("hub.callback", callbackUrl),
+            new KeyValuePair<string, string>("hub.mode", "subscribe"),
+            new KeyValuePair<string, string>("hub.topic", topicUrl),
+            new KeyValuePair<string, string>("hub.verify", "sync")
+        });
+
+        using (var client = new HttpClient())
+        {
+            using var response = await client.PostAsync(hubUrl, content);
+
+            _logger.Information(response.IsSuccessStatusCode
+                ? "Successfully subscribed to the channel."
+                : $"Failed to subscribe. Status code: {response.StatusCode}");
+        }
+
+        return Ok("Sucess");
+    }
 }
