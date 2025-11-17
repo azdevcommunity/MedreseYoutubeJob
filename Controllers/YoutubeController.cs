@@ -211,6 +211,12 @@ public class YoutubeController(
         var origin = Request.Headers["Origin"].ToString();
         logger.Information($"Request received from Origin: {origin}");
 
+
+        if (hubMode == "subscribe")
+        {
+            return Ok(hubChallenge);
+        }
+
         var a = new
         {
             hubMode = hubMode,
