@@ -14,7 +14,7 @@ public class CorsConfig
             options.AddPolicy(name: "CorsPolicy",
                 policy =>
                 {
-                    policy.WithOrigins(corsOrigins)
+                    policy.AllowAnyOrigin()
                         .AllowAnyHeader()
                         .AllowAnyMethod();
                 });
