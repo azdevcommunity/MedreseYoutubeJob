@@ -1,5 +1,6 @@
 using System.Xml.Linq;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json.Linq;
 using Renci.SshNet;
 using YoutubeApiSynchronize.Dto;
 using YoutubeApiSynchronize.Options;
@@ -182,86 +183,31 @@ public class YoutubeController
     }
 
 
-    [HttpPost("push")]
-    public async Task<IActionResult> Post([FromBody] string xmlContent)
+    [Route("api/[controller]")]
+    [ApiController]
+    public class YouTubeController : ControllerBase
     {
-        try
+        [HttpPost("push")]
+        public async Task<IActionResult> PushNotification([FromBody] string payload, [FromQuery] string challenge)
         {
-            _logger.Information("YouTube push notification received");
-            var xmlDoc = XDocument.Parse(xmlContent);
-
-            var entry = xmlDoc.Descendants("{http://www.w3.org/2005/Atom}entry").FirstOrDefault();
-            if (entry == null)
+            // İlk bildirimde gelen hub.challenge parametresini doğrulama
+            if (!string.IsNullOrEmpty(challenge))
             {
-                _logger.Warning("Invalid notification format received");
-                return BadRequest("Invalid notification format.");
+                return Ok(challenge); // Challenge'ı geri göndererek doğrulama sağlanır
             }
 
-            var notification = new YouTubeNotificationDto
-            {
-                VideoId = entry.Element("{http://www.youtube.com/xml/schemas/2015}videoId")?.Value,
-                ChannelId = entry.Element("{http://www.youtube.com/xml/schemas/2015}channelId")?.Value,
-                Title = entry.Element("{http://www.w3.org/2005/Atom}title")?.Value,
-                VideoUrl = entry.Element("{http://www.w3.org/2005/Atom}link")?.Attribute("href")?.Value,
-                ChannelUrl = entry.Descendants("{http://www.w3.org/2005/Atom}author")
-                    .Descendants("{http://www.w3.org/2005/Atom}uri").FirstOrDefault()?.Value,
-                Published = entry.Element("{http://www.w3.org/2005/Atom}published")?.Value,
-                Updated = entry.Element("{http://www.w3.org/2005/Atom}updated")?.Value
-            };
+            // Gelen bildirim verisini işleme
+            var json = JObject.Parse(payload);
+            var videoId = json["video_id"]?.ToString();
+            var title = json["title"]?.ToString();
+            var publishedAt = json["published"]?.ToString();
 
-            _logger.Information("YouTube notification parsed - VideoId: {VideoId}, ChannelId: {ChannelId}, Title: {Title}",
-                notification.VideoId, notification.ChannelId, notification.Title);
-            _logger.Debug("Notification details - VideoUrl: {VideoUrl}, ChannelUrl: {ChannelUrl}, Published: {Published}",
-                notification.VideoUrl, notification.ChannelUrl, notification.Published);
+            // Burada veriyi işleyebilirsiniz (veritabanına kaydedebilir veya bildirim gönderebilirsiniz)
+            Console.WriteLine($"Video ID: {videoId}, Title: {title}, Published: {publishedAt}");
 
-            return Ok("Notification processed successfully");
-        }
-        catch (Exception ex)
-        {
-            _logger.Error(ex, "Error parsing YouTube push notification");
-            return BadRequest("Error processing notification");
+            return Ok("Notification received");
         }
     }
 
-
-    [HttpPost("push-dlt")]
-    public async Task<IActionResult> PostDlt([FromBody] string xmlContent)
-    {
-        try
-        {
-            _logger.Information("YouTube push-dlt notification received");
-            var xmlDoc = XDocument.Parse(xmlContent);
-
-            var entry = xmlDoc.Descendants("{http://www.w3.org/2005/Atom}entry").FirstOrDefault();
-            if (entry == null)
-            {
-                _logger.Warning("Invalid notification format received in push-dlt");
-                return BadRequest("Invalid notification format.");
-            }
-
-            var notification = new YouTubeNotificationDto
-            {
-                VideoId = entry.Element("{http://www.youtube.com/xml/schemas/2015}videoId")?.Value,
-                ChannelId = entry.Element("{http://www.youtube.com/xml/schemas/2015}channelId")?.Value,
-                Title = entry.Element("{http://www.w3.org/2005/Atom}title")?.Value,
-                VideoUrl = entry.Element("{http://www.w3.org/2005/Atom}link")?.Attribute("href")?.Value,
-                ChannelUrl = entry.Descendants("{http://www.w3.org/2005/Atom}author")
-                    .Descendants("{http://www.w3.org/2005/Atom}uri").FirstOrDefault()?.Value,
-                Published = entry.Element("{http://www.w3.org/2005/Atom}published")?.Value,
-                Updated = entry.Element("{http://www.w3.org/2005/Atom}updated")?.Value
-            };
-
-            _logger.Information("YouTube push-dlt notification parsed - VideoId: {VideoId}, ChannelId: {ChannelId}, Title: {Title}",
-                notification.VideoId, notification.ChannelId, notification.Title);
-            _logger.Debug("Push-dlt notification details - VideoUrl: {VideoUrl}, ChannelUrl: {ChannelUrl}, Published: {Published}",
-                notification.VideoUrl, notification.ChannelUrl, notification.Published);
-
-            return Ok("Notification processed successfully");
-        }
-        catch (Exception ex)
-        {
-            _logger.Error(ex, "Error parsing YouTube push-dlt notification");
-            return BadRequest("Error processing notification");
-        }
-    }
+ 
 }
