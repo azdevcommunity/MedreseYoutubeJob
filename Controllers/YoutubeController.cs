@@ -216,7 +216,7 @@ public class YoutubeController
     public async Task<IActionResult> Subscribe([FromBody] string payload, [FromQuery] string challenge)
     {
         string channelId = "UCN22jHS7MPBp38ZWZemt7i";
-        string callbackUrl = "https://api-ytb.nizamiyyemedresesi.az/api/youtube-pubsub/push";
+        string callbackUrl = "https://api-ytb.nizamiyyemedresesi.az/api/Youtube/push";
 
         string hubUrl = "https://pubsubhubbub.appspot.com/subscribe";
         string topicUrl = $"https://www.youtube.com/feeds/videos.xml?channel_id={channelId}";
