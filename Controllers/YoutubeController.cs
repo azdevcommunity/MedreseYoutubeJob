@@ -4,6 +4,7 @@ using Renci.SshNet;
 using YoutubeApiSynchronize.Dto;
 using YoutubeApiSynchronize.Options;
 using YoutubeApiSynchronize.Services;
+using ILogger = Serilog.ILogger;
 
 namespace YoutubeApiSynchronize.Controllers;
 
@@ -14,10 +15,10 @@ public class YoutubeController
 {
     private readonly YoutubeService _youtubeService;
     private readonly IConfiguration _configuration;
-    private readonly ILogger<YoutubeController> _logger;
+    private readonly ILogger _logger;
 
     public YoutubeController(YoutubeService youtubeService, IConfiguration configuration,
-        ILogger<YoutubeController> logger)
+        ILogger logger)
     {
         _youtubeService = youtubeService;
         _configuration = configuration;
@@ -129,20 +130,20 @@ public class YoutubeController
                 Updated = entry.Element("{http://www.w3.org/2005/Atom}updated")?.Value
             };
 
-            _logger.LogInformation($"Video ID: {notification.VideoId}");
-            _logger.LogInformation($"Channel ID: {notification.ChannelId}");
-            _logger.LogInformation($"Title: {notification.Title}");
-            _logger.LogInformation($"Video URL: {notification.VideoUrl}");
-            _logger.LogInformation($"Channel URL: {notification.ChannelUrl}");
-            _logger.LogInformation($"Published: {notification.Published}");
-            _logger.LogInformation($"Updated: {notification.Updated}");
+            _logger.Information($"Video ID: {notification.VideoId}");
+            _logger.Information($"Channel ID: {notification.ChannelId}");
+            _logger.Information($"Title: {notification.Title}");
+            _logger.Information($"Video URL: {notification.VideoUrl}");
+            _logger.Information($"Channel URL: {notification.ChannelUrl}");
+            _logger.Information($"Published: {notification.Published}");
+            _logger.Information($"Updated: {notification.Updated}");
 
 
             return Ok("Notification processed successfully");
         }
         catch (Exception ex)
         {
-            _logger.LogInformation($"Error parsing notification: {ex.Message}");
+            _logger.Error($"Error parsing notification: {ex.Message}");
             return BadRequest("Error processing notification");
         }
     }
@@ -173,20 +174,20 @@ public class YoutubeController
                 Updated = entry.Element("{http://www.w3.org/2005/Atom}updated")?.Value
             };
 
-            _logger.LogInformation($"Video ID: {notification.VideoId}");
-            _logger.LogInformation($"Channel ID: {notification.ChannelId}");
-            _logger.LogInformation($"Title: {notification.Title}");
-            _logger.LogInformation($"Video URL: {notification.VideoUrl}");
-            _logger.LogInformation($"Channel URL: {notification.ChannelUrl}");
-            _logger.LogInformation($"Published: {notification.Published}");
-            _logger.LogInformation($"Updated: {notification.Updated}");
+            _logger.Information($"Video ID: {notification.VideoId}");
+            _logger.Information($"Channel ID: {notification.ChannelId}");
+            _logger.Information($"Title: {notification.Title}");
+            _logger.Information($"Video URL: {notification.VideoUrl}");
+            _logger.Information($"Channel URL: {notification.ChannelUrl}");
+            _logger.Information($"Published: {notification.Published}");
+            _logger.Information($"Updated: {notification.Updated}");
 
 
             return Ok("Notification processed successfully");
         }
         catch (Exception ex)
         {
-            _logger.LogInformation($"Error parsing notification: {ex.Message}");
+            _logger.Error($"Error parsing notification: {ex.Message}");
             return BadRequest("Error processing notification");
         }
     }

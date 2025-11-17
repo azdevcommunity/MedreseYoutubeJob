@@ -1,4 +1,5 @@
 using System.Reflection;
+using Google.Apis.Util;
 using Serilog;
 using YoutubeApiSynchronize.Configuration;
 using YoutubeApiSynchronize.Jobs;
@@ -10,6 +11,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateLogger();
+
 builder.Services.AddLogging(cfg =>
 {
     cfg.AddConsole();
