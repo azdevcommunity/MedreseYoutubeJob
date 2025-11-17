@@ -1,4 +1,5 @@
 using System.Reflection;
+using Serilog;
 using YoutubeApiSynchronize.Configuration;
 using YoutubeApiSynchronize.Jobs;
 using YoutubeApiSynchronize.Options;
@@ -9,6 +10,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddLogging(cfg =>
+{
+    cfg.AddConsole();
+    cfg.AddDebug();
+    cfg.AddSerilog();
+});
 builder.Services.AddScoped<YoutubeService>();
 builder.Services.Configure<YoutubeConfig>(builder.Configuration.GetSection("YoutubeConfig"));
 builder.Services.Configure<LogOptions>(builder.Configuration.GetSection("LogConfig"));
