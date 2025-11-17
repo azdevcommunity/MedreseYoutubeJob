@@ -373,11 +373,9 @@ public class YoutubeService(
             return false;
         }
 
-        // Playlist tapılmayıbsa və ya exceptional list boşdursa → qısadır
         if (shortPlaylist.ExceptionalVideos == null || shortPlaylist.ExceptionalVideos.Count == 0)
             return true;
 
-        // Playlistdə həmin video varsa → qısadır, yoxdursa → uzun
         return videoId != null && !shortPlaylist.ExceptionalVideos.Contains(videoId);
     }
 
@@ -393,43 +391,6 @@ public class YoutubeService(
 
         var response = await videoRequest.ExecuteAsync();
         return response;
-
-        // #region MyRegion
-        //
-        // var request = _youtubeService.Search.List("snippet");
-        // request.Type = "video";
-        // request.MaxResults = 5;
-        // request.PageToken = "CAUQAA";
-        // request.ChannelId = youtubeConfig.Value.ChannelID;
-        //
-        // var response = await request.ExecuteAsync();
-        //
-        // foreach (var searchResult in response.Items
-        //              .Where(item => item.Snippet != null))
-        // {
-        //     if (searchResult.Id.VideoId == "TmtEiWn3HMY")
-        //     {
-        //         Console.WriteLine("dasda");
-        //     }
-        // }
-        //
-        // #endregion
-        //
-        //
-        // var request2 = _youtubeService.PlaylistItems.List("snippet");
-        // request2.PlaylistId = "PLU43-RoCoSfPdyhCm8wG54l0DwYOuiTaa";
-        // request2.MaxResults = 1;
-        // request2.PageToken = null;
-        //
-        // var response2 = await request.ExecuteAsync();
-        //
-        //
-        // return new
-        // {
-        //     response.NextPageToken,
-        //     Search = response.Items,
-        //     Elman = response2.Items
-        // };
     }
 
     public async Task<object?> UpdateByVideoId(string videoId)
