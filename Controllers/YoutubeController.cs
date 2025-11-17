@@ -182,19 +182,12 @@ public class YoutubeController(
     }
 
 
-    [HttpGet("push")]
-    public async Task<IActionResult> PushNotification([FromQuery] string challenge, [FromQuery] string hubMode,
-        [FromQuery] string hubTopic, [FromQuery] string hubChallenge)
+    [HttpPost("push")]
+    public async Task<IActionResult> PushNotification([FromBody] object payload, [FromQuery] string challenge)
     {
         try
         {
-            string jsonPayload = JsonConvert.SerializeObject(new
-            {
-                Challenge = challenge,
-                HubMode = hubMode,
-                HubTopic = hubTopic,
-                HubChallenge = hubChallenge
-            });
+            string jsonPayload = JsonConvert.SerializeObject(payload);
 
             YouTubeNotification youtubeNotificationModel = new YouTubeNotification()
             {
