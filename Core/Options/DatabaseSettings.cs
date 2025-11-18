@@ -1,7 +1,8 @@
-namespace YoutubeApiSynchronize.Options;
+namespace YoutubeApiSynchronize.Core.Options;
 
 public class DatabaseSettings
 {
+    public const string Key = "DB";
     public string Host { get; set; }
     public string Username { get; set; }
     public string Password { get; set; }

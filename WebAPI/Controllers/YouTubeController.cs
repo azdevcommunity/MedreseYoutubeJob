@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
-using Renci.SshNet;
 using YoutubeApiSynchronize.Application.UseCases;
-using YoutubeApiSynchronize.Core.Interfaces;
-using YoutubeApiSynchronize.Options;
+using YoutubeApiSynchronize.Core.Interfaces.Notification;
+using YoutubeApiSynchronize.Core.Interfaces.Youtube;
+using YoutubeApiSynchronize.Core.Options;
 using ILogger = Serilog.ILogger;
 
 namespace YoutubeApiSynchronize.WebAPI.Controllers;
@@ -148,46 +148,6 @@ public class YouTubeController : ControllerBase
         }
     }
 
-    [HttpPost("jenkins/{status}")]
-    public IActionResult TurnJenkins(int status)
-    {
-        try
-        {
-            _logger.Information("Jenkins control request: status={Status}", status);
-
-            if (status != 0 && status != 1)
-            {
-                _logger.Warning("Invalid Jenkins status parameter: {Status}", status);
-                return BadRequest("Geçersiz parametre. Sadece 0 veya 1 olmalı.");
-            }
-
-            using var client = new SshClient(_configuration["SERVER_HOST"], _configuration["SERVER_USER_NAME"],
-                _configuration["SERVER_PASSWORD"]);
-
-            _logger.Debug("Connecting to SSH server");
-            client.Connect();
-
-            if (status == 1)
-            {
-                _logger.Information("Starting Jenkins service");
-                client.RunCommand("sudo systemctl start jenkins");
-            }
-            else
-            {
-                _logger.Information("Stopping Jenkins service");
-                client.RunCommand("sudo systemctl stop jenkins");
-            }
-
-            client.Disconnect();
-            _logger.Information("Jenkins service {Action} successfully", status == 1 ? "started" : "stopped");
-            return Ok(new { message = $"Jenkins {(status == 1 ? "başlatıldı" : "durduruldu")}" });
-        }
-        catch (Exception ex)
-        {
-            _logger.Error(ex, "Error controlling Jenkins service");
-            return StatusCode(500, new { error = "Internal server error" });
-        }
-    }
 
     [HttpGet("channelstat")]
     public async Task<IActionResult> GetChannelStat()
@@ -221,7 +181,8 @@ public class YouTubeController : ControllerBase
         [FromQuery(Name = "hub.mode")] string hubMode,
         [FromQuery(Name = "hub.topic")] string hubTopic,
         [FromQuery(Name = "hub.challenge")] string hubChallenge,
-        [FromQuery(Name = "hub.lease_seconds")] int hubLeaseSeconds)
+        [FromQuery(Name = "hub.lease_seconds")]
+        int hubLeaseSeconds)
     {
         if (hubMode == "subscribe")
         {
@@ -257,7 +218,7 @@ public class YouTubeController : ControllerBase
     {
         var channelId = _configuration.GetSection("YoutubeConfig:ChannelID").Value;
         var callbackUrl = "https://api-ytb.nizamiyyemedresesi.az/api/Youtube/push";
-        
+
         await _notificationService.SubscribeToChannelAsync(channelId!, callbackUrl);
         return Ok("Success");
     }

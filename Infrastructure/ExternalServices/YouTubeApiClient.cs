@@ -3,7 +3,8 @@ using Google.Apis.YouTube.v3;
 using Google.Apis.YouTube.v3.Data;
 using Microsoft.Extensions.Options;
 using YoutubeApiSynchronize.Core.Interfaces;
-using YoutubeApiSynchronize.Options;
+using YoutubeApiSynchronize.Core.Interfaces.Youtube;
+using YoutubeApiSynchronize.Core.Options;
 
 namespace YoutubeApiSynchronize.Infrastructure.ExternalServices;
 

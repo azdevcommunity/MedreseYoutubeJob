@@ -1,4 +1,4 @@
-namespace YoutubeApiSynchronize.Options;
+namespace YoutubeApiSynchronize.Core.Options;
 
 public class LogConfig
 {

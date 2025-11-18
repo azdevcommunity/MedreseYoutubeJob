@@ -1,4 +1,5 @@
 using YoutubeApiSynchronize.Core.Interfaces;
+using YoutubeApiSynchronize.Core.Interfaces.Youtube;
 using ILogger = Serilog.ILogger;
 
 namespace YoutubeApiSynchronize.Application.UseCases;
