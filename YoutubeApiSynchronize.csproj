@@ -36,4 +36,13 @@
       <Content Include=".github\workflows\deploy.yml" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Update="serilog.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="serilog.dev.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
 </Project>
