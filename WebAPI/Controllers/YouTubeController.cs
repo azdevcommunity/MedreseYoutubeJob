@@ -34,136 +34,70 @@ public class YouTubeController : ControllerBase
     [HttpGet("env")]
     public IActionResult GetEnv()
     {
-        try
-        {
-            _logger.Information("GetEnv endpoint called");
-            var db = _configuration.GetSection("DB").Get<DatabaseSettings>()!;
+        _logger.Information("GetEnv endpoint called");
+        var db = _configuration.GetSection("DB").Get<DatabaseSettings>()!;
 
-            _logger.Debug("Environment configuration retrieved successfully");
-            return Ok(new
-            {
-                TestValue = _configuration["Test:Value"],
-                db.ConnectionString,
-            });
-        }
-        catch (Exception ex)
+        _logger.Debug("Environment configuration retrieved successfully");
+        return Ok(new
         {
-            _logger.Error(ex, "Error in GetEnv endpoint");
-            return StatusCode(500, new { error = "Internal server error" });
-        }
+            TestValue = _configuration["Test:Value"],
+            db.ConnectionString,
+        });
     }
 
     [HttpGet("/video-db/{videoId}")]
     public async Task<IActionResult> GetVideoFromDb(string videoId)
     {
-        try
-        {
-            _logger.Information("Fetching video from database: {VideoId}", videoId);
-            var result = await _youtubeService.GetVideoFromDbAsync(videoId);
-            _logger.Debug("Video retrieved from database: {VideoId}", videoId);
-            return Ok(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.Error(ex, "Error fetching video from database: {VideoId}", videoId);
-            return StatusCode(500, new { error = "Internal server error" });
-        }
+        _logger.Information("Fetching video from database: {VideoId}", videoId);
+        var result = await _youtubeService.GetVideoFromDbAsync(videoId);
+        _logger.Debug("Video retrieved from database: {VideoId}", videoId);
+        return Ok(result);
     }
 
     [HttpGet("/video-ytb/{videoId}")]
     public async Task<IActionResult> GetVideoFromYoutube(string videoId)
     {
-        try
-        {
-            _logger.Information("Fetching video from YouTube: {VideoId}", videoId);
-            var result = await _youtubeService.GetVideoFromYouTubeAsync(videoId);
-            _logger.Debug("Video retrieved from YouTube: {VideoId}", videoId);
-            return Ok(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.Error(ex, "Error fetching video from YouTube: {VideoId}", videoId);
-            return StatusCode(500, new { error = "Internal server error" });
-        }
+        _logger.Information("Fetching video from YouTube: {VideoId}", videoId);
+        var result = await _youtubeService.GetVideoFromYouTubeAsync(videoId);
+        _logger.Debug("Video retrieved from YouTube: {VideoId}", videoId);
+        return Ok(result);
     }
 
     [HttpPut("/{videoId}")]
     public async Task<IActionResult> UpdateByVideoId(string videoId)
     {
-        try
-        {
-            _logger.Information("Updating video: {VideoId}", videoId);
-            var result = await _youtubeService.UpdateVideoByIdAsync(videoId);
-            _logger.Information("Video updated successfully: {VideoId}", videoId);
-            return Ok(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.Error(ex, "Error updating video: {VideoId}", videoId);
-            return StatusCode(500, new { error = "Internal server error" });
-        }
+        _logger.Information("Updating video: {VideoId}", videoId);
+        var result = await _youtubeService.UpdateVideoByIdAsync(videoId);
+        _logger.Information("Video updated successfully: {VideoId}", videoId);
+        return Ok(result);
     }
 
     [HttpPost("sync")]
     public async Task<IActionResult> SyncYouTubeData()
     {
-        try
-        {
-            _logger.Information("YouTube synchronization started via API endpoint");
-            var result = await _synchronizeUseCase.ExecuteAsync();
-            _logger.Information("YouTube synchronization completed successfully");
-            return Ok(result);
-        }
-        catch (InvalidOperationException ex)
-        {
-            _logger.Warning(ex, "Rate limit exceeded during synchronization");
-            return StatusCode(429, new { Message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.Error(ex, "Error during YouTube synchronization");
-            return StatusCode(500, new { error = "Internal server error" });
-        }
+        _logger.Information("YouTube synchronization started via API endpoint");
+        var result = await _synchronizeUseCase.ExecuteAsync();
+        _logger.Information("YouTube synchronization completed successfully");
+        return Ok(result);
     }
 
     [HttpPost("update-channel-stats")]
     public async Task<IActionResult> UpdateChannelStats()
     {
-        try
-        {
-            _logger.Information("Updating channel stats");
-            var result = await _youtubeService.UpdateChannelStatsAsync();
-            _logger.Information("Channel stats updated successfully");
-            return Ok(result);
-        }
-        catch (InvalidOperationException ex)
-        {
-            _logger.Warning(ex, "Rate limit exceeded during synchronization");
-            return StatusCode(429, new { Message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.Error(ex, "Error during YouTube synchronization");
-            return StatusCode(500, new { error = "Internal server error" });
-        }
+        _logger.Information("Updating channel stats");
+        var result = await _youtubeService.UpdateChannelStatsAsync();
+        _logger.Information("Channel stats updated successfully");
+        return Ok(result);
     }
 
 
     [HttpGet("channelstat")]
     public async Task<IActionResult> GetChannelStat()
     {
-        try
-        {
-            _logger.Information("Channel statistics request received");
-            var result = await _youtubeService.UpdateChannelStatsAsync();
-            _logger.Information("Channel statistics retrieved successfully");
-            return Ok(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.Error(ex, "Error retrieving channel statistics");
-            return StatusCode(500, new { error = "Internal server error" });
-        }
+        _logger.Information("Channel statistics request received");
+        var result = await _youtubeService.UpdateChannelStatsAsync();
+        _logger.Information("Channel statistics retrieved successfully");
+        return Ok(result);
     }
 
     [HttpPost("push")]

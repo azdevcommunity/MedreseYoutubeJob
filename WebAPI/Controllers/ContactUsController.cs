@@ -22,17 +22,9 @@ public class ContactUsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<ContactUsResponse>> CreateContact([FromBody] CreateContactUsRequest request)
     {
-        try
-        {
-            _logger.Information("CreateContact endpoint called");
-            var contact = await _contactUsService.CreateAsync(request);
-            return Ok(contact);
-        }
-        catch (Exception ex)
-        {
-            _logger.Error(ex, "Error in CreateContact endpoint");
-            return StatusCode(500, new { error = "Internal server error" });
-        }
+        _logger.Information("CreateContact endpoint called");
+        var contact = await _contactUsService.CreateAsync(request);
+        return Ok(contact);
     }
 
     [HttpGet]
@@ -42,74 +34,32 @@ public class ContactUsController : ControllerBase
         [FromQuery] string sortBy = "createdAt",
         [FromQuery] string sortDir = "DESC")
     {
-        try
-        {
-            _logger.Information("GetAllContacts endpoint called with page: {Page}, size: {Size}", page, size);
-            var contacts = await _contactUsService.GetAllContactsAsync(page, size, sortBy, sortDir);
-            return Ok(contacts);
-        }
-        catch (Exception ex)
-        {
-            _logger.Error(ex, "Error in GetAllContacts endpoint");
-            return StatusCode(500, new { error = "Internal server error" });
-        }
+        _logger.Information("GetAllContacts endpoint called with page: {Page}, size: {Size}", page, size);
+        var contacts = await _contactUsService.GetAllContactsAsync(page, size, sortBy, sortDir);
+        return Ok(contacts);
     }
 
     [HttpGet("{id}")]
     public async Task<ActionResult<ContactUsResponse>> GetContactById(int id)
     {
-        try
-        {
-            _logger.Information("GetContactById endpoint called with id: {Id}", id);
-            var contact = await _contactUsService.GetByIdAsync(id);
-            return Ok(contact);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            _logger.Warning(ex, "Contact not found with id: {Id}", id);
-            return NotFound(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.Error(ex, "Error in GetContactById endpoint");
-            return StatusCode(500, new { error = "Internal server error" });
-        }
+        _logger.Information("GetContactById endpoint called with id: {Id}", id);
+        var contact = await _contactUsService.GetByIdAsync(id);
+        return Ok(contact);
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteContact(int id)
     {
-        try
-        {
-            _logger.Information("DeleteContact endpoint called with id: {Id}", id);
-            await _contactUsService.DeleteAsync(id);
-            return NoContent();
-        }
-        catch (KeyNotFoundException ex)
-        {
-            _logger.Warning(ex, "Contact not found with id: {Id}", id);
-            return NotFound(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.Error(ex, "Error in DeleteContact endpoint");
-            return StatusCode(500, new { error = "Internal server error" });
-        }
+        _logger.Information("DeleteContact endpoint called with id: {Id}", id);
+        await _contactUsService.DeleteAsync(id);
+        return NoContent();
     }
 
     [HttpPut("update-batch")]
     public async Task<IActionResult> UpdateBatch([FromBody] List<int> contacts)
     {
-        try
-        {
-            _logger.Information("UpdateBatch endpoint called with {Count} contacts", contacts.Count);
-            await _contactUsService.UpdateBatchAsync(contacts);
-            return Ok();
-        }
-        catch (Exception ex)
-        {
-            _logger.Error(ex, "Error in UpdateBatch endpoint");
-            return StatusCode(500, new { error = "Internal server error" });
-        }
+        _logger.Information("UpdateBatch endpoint called with {Count} contacts", contacts.Count);
+        await _contactUsService.UpdateBatchAsync(contacts);
+        return Ok();
     }
 }

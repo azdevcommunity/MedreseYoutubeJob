@@ -28,6 +28,9 @@ public class MedreseDbContext : DbContext
     public DbSet<QuestionCategory> QuestionCategories { get; set; }
     public DbSet<QuestionTag> QuestionTags { get; set; }
     public DbSet<Statistic> Statistics { get; set; }
+    public DbSet<Book> Books { get; set; }
+    public DbSet<BookCategory> BookCategories { get; set; }
+    public DbSet<AuthorBook> AuthorBooks { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

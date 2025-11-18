@@ -50,9 +50,7 @@ public class AuthorRepository : IAuthorRepository
 
     public async Task<bool> HasBooksAsync(int authorId)
     {
-        // TODO: Implement when AuthorBook junction table is added
-        // return await _context.AuthorBooks.AnyAsync(ab => ab.AuthorId == authorId);
-        return await Task.FromResult(false);
+        return await _context.AuthorBooks.AnyAsync(ab => ab.AuthorId == authorId);
     }
 
     public async Task<bool> HasArticlesAsync(int authorId)

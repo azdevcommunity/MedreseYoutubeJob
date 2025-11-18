@@ -55,23 +55,17 @@ public class CategoryRepository : ICategoryRepository
 
     public async Task<bool> HasArticlesAsync(int categoryId)
     {
-        // TODO: Implement when ArticleCategory junction table is added
-        // return await _context.ArticleCategories.AnyAsync(ac => ac.CategoryId == categoryId);
-        return await Task.FromResult(false);
+        return await _context.ArticleCategories.AnyAsync(ac => ac.CategoryId == categoryId);
     }
 
     public async Task<bool> HasQuestionsAsync(int categoryId)
     {
-        // TODO: Implement when QuestionCategory junction table is added
-        // return await _context.QuestionCategories.AnyAsync(qc => qc.CategoryId == categoryId);
-        return await Task.FromResult(false);
+        return await _context.QuestionCategories.AnyAsync(qc => qc.CategoryId == categoryId);
     }
 
     public async Task<bool> HasBooksAsync(int categoryId)
     {
-        // TODO: Implement when BookCategory junction table is added
-        // return await _context.BookCategories.AnyAsync(bc => bc.CategoryId == categoryId);
-        return await Task.FromResult(false);
+        return await _context.BookCategories.AnyAsync(bc => bc.CategoryId == categoryId);
     }
 
     public async Task SaveChangesAsync()

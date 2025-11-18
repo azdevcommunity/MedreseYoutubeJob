@@ -18,7 +18,7 @@ builder.Services.AddWebApiServices(builder.Configuration);
 var app = builder.Build();
 
 // Add Global Error Handling Middleware
-app.UseMiddleware<ErrorHandlingMiddleware>();
+app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 
 // Configure HTTP Pipeline
 app.UseSwagger();

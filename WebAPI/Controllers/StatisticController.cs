@@ -22,54 +22,25 @@ public class StatisticController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<List<Core.Entities.Statistic>>> GetAllStatistics()
     {
-        try
-        {
-            _logger.Information("GetAllStatistics endpoint called");
-            var statistics = await _statisticService.GetAllStatisticsAsync();
-            return Ok(statistics);
-        }
-        catch (Exception ex)
-        {
-            _logger.Error(ex, "Error in GetAllStatistics endpoint");
-            return StatusCode(500, new { error = "Internal server error" });
-        }
+        _logger.Information("GetAllStatistics endpoint called");
+        var statistics = await _statisticService.GetAllStatisticsAsync();
+        return Ok(statistics);
     }
 
     [HttpGet("{id}")]
     public async Task<ActionResult<Core.Entities.Statistic>> GetStatisticById(int id)
     {
-        try
-        {
-            _logger.Information("GetStatisticById endpoint called with id: {Id}", id);
-            var statistic = await _statisticService.GetStatisticByIdAsync(id);
-            return Ok(statistic);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            _logger.Warning(ex, "Statistic not found with id: {Id}", id);
-            return NotFound(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.Error(ex, "Error in GetStatisticById endpoint");
-            return StatusCode(500, new { error = "Internal server error" });
-        }
+        _logger.Information("GetStatisticById endpoint called with id: {Id}", id);
+        var statistic = await _statisticService.GetStatisticByIdAsync(id);
+        return Ok(statistic);
     }
 
     [HttpPost]
     public async Task<ActionResult<StatisticResponse>> CreateStatistic([FromBody] CreateStatisticRequest request)
     {
-        try
-        {
-            _logger.Information("CreateStatistic endpoint called");
-            var statistic = await _statisticService.CreateStatisticAsync(request);
-            return Ok(statistic);
-        }
-        catch (Exception ex)
-        {
-            _logger.Error(ex, "Error in CreateStatistic endpoint");
-            return StatusCode(500, new { error = "Internal server error" });
-        }
+        _logger.Information("CreateStatistic endpoint called");
+        var statistic = await _statisticService.CreateStatisticAsync(request);
+        return Ok(statistic);
     }
 
     [HttpPut("{id}")]
@@ -77,42 +48,16 @@ public class StatisticController : ControllerBase
         int id,
         [FromBody] UpdateStatisticRequest request)
     {
-        try
-        {
-            _logger.Information("UpdateStatistic endpoint called with id: {Id}", id);
-            var statistic = await _statisticService.UpdateStatisticAsync(id, request);
-            return Ok(statistic);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            _logger.Warning(ex, "Statistic not found with id: {Id}", id);
-            return NotFound(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.Error(ex, "Error in UpdateStatistic endpoint");
-            return StatusCode(500, new { error = "Internal server error" });
-        }
+        _logger.Information("UpdateStatistic endpoint called with id: {Id}", id);
+        var statistic = await _statisticService.UpdateStatisticAsync(id, request);
+        return Ok(statistic);
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteStatistic(int id)
     {
-        try
-        {
-            _logger.Information("DeleteStatistic endpoint called with id: {Id}", id);
-            await _statisticService.DeleteStatisticAsync(id);
-            return NoContent();
-        }
-        catch (KeyNotFoundException ex)
-        {
-            _logger.Warning(ex, "Statistic not found with id: {Id}", id);
-            return NotFound(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.Error(ex, "Error in DeleteStatistic endpoint");
-            return StatusCode(500, new { error = "Internal server error" });
-        }
+        _logger.Information("DeleteStatistic endpoint called with id: {Id}", id);
+        await _statisticService.DeleteStatisticAsync(id);
+        return NoContent();
     }
 }

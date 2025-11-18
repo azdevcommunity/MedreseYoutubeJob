@@ -23,17 +23,9 @@ public class SearchController : ControllerBase
         [FromQuery] long? categoryId = null,
         [FromQuery] string? search = null)
     {
-        try
-        {
-            _logger.Information("Search endpoint called with categoryId: {CategoryId}, search: {Search}", 
-                categoryId, search);
-            var result = await _searchService.SearchAsync(categoryId, search);
-            return Ok(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.Error(ex, "Error in Search endpoint");
-            return StatusCode(500, new { error = "Internal server error" });
-        }
+        _logger.Information("Search endpoint called with categoryId: {CategoryId}, search: {Search}",
+            categoryId, search);
+        var result = await _searchService.SearchAsync(categoryId, search);
+        return Ok(result);
     }
 }
