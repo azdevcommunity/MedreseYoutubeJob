@@ -212,8 +212,8 @@ public class YoutubeController(
         {
             return Ok(hubChallenge);
         }
-
-        await pubSubService.PushAsync(hubMode, hubTopic, hubChallenge, hubLeaseSeconds);
+     
+        await pubSubService.PushAsync(hubMode, hubTopic, hubChallenge, hubLeaseSeconds,  Request.Host.Value);
 
         return Ok("Notification received");
     }
@@ -222,7 +222,7 @@ public class YoutubeController(
     [HttpPost("push-dlt")]
     public async Task<IActionResult> PushNotificationDlt()
     {
-        await pubSubService.PushDltAsync(Request.Body);
+        await pubSubService.PushDltAsync(Request.Body, Request.Host.Value);
         return Ok("Notification received");
     }
 
