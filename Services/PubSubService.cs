@@ -1,8 +1,12 @@
+using System.Text.Json;
+using YoutubeApiSynchronize.Context;
+using YoutubeApiSynchronize.Entity;
+
 namespace YoutubeApiSynchronize.Services;
 
 using ILogger = Serilog.ILogger;
 
-public class PubSubService(ILogger logger)
+public class PubSubService(ILogger logger, MedreseDbContext context)
 {
     private const string ChannelId = "UCN22jHS7MPBp38ZWZemt7iQ";
     private const string HubUrl = "https://pubsubhubbub.appspot.com/subscribe";
@@ -77,5 +81,43 @@ public class PubSubService(ILogger logger)
                 throw new Exception("Failed to subscribe. Status code: {subscribeResponse.StatusCode}");
             }
         }
+    }
+
+
+    public async Task PushAsync(string hubMode,
+        string hubTopic,
+        string hubChallenge,
+        int hubLeaseSeconds)
+    {
+        var a = new
+        {
+            hubMode = hubMode,
+            hubTopic = hubTopic,
+            hubChallenge = hubChallenge,
+            hubLeaseSeconds = hubLeaseSeconds,
+            message = " Bu youtubedan gelir"
+        };
+
+        YouTubeNotification youtubeNotificationModel = new YouTubeNotification()
+        {
+            NotificationData = JsonSerializer.Serialize(a)
+        };
+
+        await context.YouTubeNotifications.AddAsync(youtubeNotificationModel);
+        await context.SaveChangesAsync();
+    }
+
+    public async Task PushDltAsync(Stream bodyStream)
+    {
+        using var reader = new StreamReader(bodyStream);
+        var payload = await reader.ReadToEndAsync();
+
+        YouTubeNotification youtubeNotificationModel = new YouTubeNotification()
+        {
+            NotificationData = payload
+        };
+
+        await context.YouTubeNotifications.AddAsync(youtubeNotificationModel);
+        await context.SaveChangesAsync();
     }
 }

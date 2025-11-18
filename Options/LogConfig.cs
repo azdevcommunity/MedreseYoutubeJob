@@ -1,6 +1,6 @@
 namespace YoutubeApiSynchronize.Options;
 
-public class LogOptions
+public class LogConfig
 {
 
     public string Loki { get; set; }

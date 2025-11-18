@@ -208,31 +208,12 @@ public class YoutubeController(
         [FromQuery(Name = "hub.lease_seconds")]
         int hubLeaseSeconds)
     {
-        var origin = Request.Headers["Origin"].ToString();
-        logger.Information($"Request received from Origin: {origin}");
-
-
         if (hubMode == "subscribe")
         {
             return Ok(hubChallenge);
         }
 
-        var a = new
-        {
-            hubMode = hubMode,
-            hubTopic = hubTopic,
-            hubChallenge = hubChallenge,
-            hubLeaseSeconds = hubLeaseSeconds,
-            message = " Bu youtubedan gelir"
-        };
-
-        YouTubeNotification youtubeNotificationModel = new YouTubeNotification()
-        {
-            NotificationData = JsonSerializer.Serialize(a)
-        };
-
-        await context.YouTubeNotifications.AddAsync(youtubeNotificationModel);
-        await context.SaveChangesAsync();
+        await pubSubService.PushAsync(hubMode, hubTopic, hubChallenge, hubLeaseSeconds);
 
         return Ok("Notification received");
     }
@@ -241,17 +222,7 @@ public class YoutubeController(
     [HttpPost("push-dlt")]
     public async Task<IActionResult> PushNotificationDlt()
     {
-        using var reader = new StreamReader(Request.Body);
-        var payload = await reader.ReadToEndAsync();
-
-        YouTubeNotification youtubeNotificationModel = new YouTubeNotification()
-        {
-            NotificationData = payload
-        };
-
-        await context.YouTubeNotifications.AddAsync(youtubeNotificationModel);
-        await context.SaveChangesAsync();
-
+        await pubSubService.PushDltAsync(Request.Body);
         return Ok("Notification received");
     }
 

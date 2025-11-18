@@ -11,7 +11,7 @@ namespace YoutubeApiSynchronize.Configuration;
 /// Supports console output, file logging, and optional Grafana Loki integration.
 /// </summary>
 [Configuration]
-public class LoggingConfig(IOptions<LogOptions> logOptions)
+public class LoggingConfig(IOptions<LogConfig> logOptions)
 {
     /// <summary>
     /// Configures Serilog for the application with console and file sinks.
@@ -27,8 +27,6 @@ public class LoggingConfig(IOptions<LogOptions> logOptions)
                 .ReadFrom.Configuration(context.Configuration)
                 .ReadFrom.Services(serilogServices)
                 .Enrich.FromLogContext()
-                //.Enrich.WithMachineName()
-                // .Enrich.WithThreadId()
                 .Enrich.WithProperty("Application", "YoutubeApiSynchronize")
                 .Enrich.WithProperty("Environment", env)
                 .Enrich.WithProperty("Hostname", hostname);
@@ -43,6 +41,23 @@ public class LoggingConfig(IOptions<LogOptions> logOptions)
             //         new LokiLabel { Key = "host", Value = hostname }
             //     ]);
             // }
+        });
+        
+
+        builder.Services.AddHttpLogging(options =>
+        {
+            options.LoggingFields = Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.All;
+            options.RequestHeaders.Add("Content-Type");
+            options.RequestHeaders.Add("User-Agent");
+            options.RequestHeaders.Add("X-Forwarded-For");
+    
+            options.ResponseHeaders.Add("Content-Type");
+            options.ResponseHeaders.Add("Content-Length");
+            options.ResponseHeaders.Add("Server");
+    
+            options.MediaTypeOptions.AddText("application/json");
+            options.MediaTypeOptions.AddText("application/xml");
+            options.MediaTypeOptions.AddText("text/plain");
         });
     }
 }
