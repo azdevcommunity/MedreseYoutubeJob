@@ -87,7 +87,8 @@ public class PubSubService(ILogger logger, MedreseDbContext context)
     public async Task PushAsync(string hubMode,
         string hubTopic,
         string hubChallenge,
-        int hubLeaseSeconds)
+        int hubLeaseSeconds,
+        string host)
     {
         var a = new
         {
@@ -95,7 +96,8 @@ public class PubSubService(ILogger logger, MedreseDbContext context)
             hubTopic = hubTopic,
             hubChallenge = hubChallenge,
             hubLeaseSeconds = hubLeaseSeconds,
-            message = " Bu youtubedan gelir"
+            message = " Bu youtubedan gelir",
+            host = host
         };
 
         YouTubeNotification youtubeNotificationModel = new YouTubeNotification()
@@ -107,14 +109,15 @@ public class PubSubService(ILogger logger, MedreseDbContext context)
         await context.SaveChangesAsync();
     }
 
-    public async Task PushDltAsync(Stream bodyStream)
+    public async Task PushDltAsync(Stream bodyStream, string host)
     {
         using var reader = new StreamReader(bodyStream);
         var payload = await reader.ReadToEndAsync();
 
         YouTubeNotification youtubeNotificationModel = new YouTubeNotification()
         {
-            NotificationData = payload
+            NotificationData = payload,
+            Title = host
         };
 
         await context.YouTubeNotifications.AddAsync(youtubeNotificationModel);
