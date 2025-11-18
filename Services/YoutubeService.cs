@@ -255,18 +255,6 @@ public class YoutubeService(
                 foreach (var searchResult in response.Items
                              .Where(item => item.Snippet != null))
                 {
-                    if (searchResult.Id.VideoId == "Eg5RrRFVrbg")
-                    {
-                        //normal
-                        var a = searchResult;
-                    }
-
-                    if (searchResult.Id.VideoId == "rB8NWK4QK14")
-                    {
-                        //short
-                        var a = searchResult;
-                    }
-
                     var newVideo = new Video
                     {
                         VideoId = searchResult.Id.VideoId,

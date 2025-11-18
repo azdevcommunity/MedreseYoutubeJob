@@ -122,6 +122,28 @@ public class YoutubeController(
         }
     }
 
+    [HttpPost("update-channel-stats")]
+    public async Task<IActionResult> UpdateChannelStats()
+    {
+        try
+        {
+            logger.Information("Updating channel stats");
+            var result = await youtubeService.UpdateChannelStatsAsync();
+            logger.Information("Channel stats updated successfully");
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            logger.Warning(ex, "Rate limit exceeded during synchronization");
+            return StatusCode(429, new { Message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            logger.Error(ex, "Error during YouTube synchronization");
+            return StatusCode(500, new { error = "Internal server error" });
+        }
+    }
+
 
     [HttpPost("jenkins/{status}")]
     public IActionResult TurnJenkins(int status)
@@ -212,8 +234,8 @@ public class YoutubeController(
         {
             return Ok(hubChallenge);
         }
-     
-        await pubSubService.PushAsync(hubMode, hubTopic, hubChallenge, hubLeaseSeconds,  Request.Host.Value);
+
+        await pubSubService.PushAsync(hubMode, hubTopic, hubChallenge, hubLeaseSeconds, Request.Host.Value);
 
         return Ok("Notification received");
     }
