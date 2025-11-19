@@ -23,10 +23,13 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
     {
+        
+        services.Configure<DatabaseSettings>(configuration.GetSection(DatabaseSettings.Key));
         // Database Configuration
         services.AddDbContext<MedreseDbContext>(options =>
         {
             var db = configuration.GetSection(DatabaseSettings.Key).Get<DatabaseSettings>()!;
+
             options.UseNpgsql(db.ConnectionString);
         });
         
