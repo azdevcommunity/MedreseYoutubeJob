@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using YoutubeApiSynchronize.Application.Dtos.Article.Requests;
 using YoutubeApiSynchronize.Application.Dtos.Article.Responses;
 using YoutubeApiSynchronize.Core.Interfaces.Article;
+using YoutubeApiSynchronize.Core.Options;
 using ILogger = Serilog.ILogger;
 
 namespace YoutubeApiSynchronize.WebAPI.Controllers;
@@ -13,12 +15,14 @@ public class ArticleController : ControllerBase
     private readonly IArticleService _articleService;
     private readonly ILogger _logger;
     private readonly IConfiguration _configuration;
+    private readonly IOptions<DatabaseSettings> _databaseSettings;
 
-    public ArticleController(IArticleService articleService, ILogger logger, IConfiguration configuration)
+    public ArticleController(IArticleService articleService, ILogger logger, IConfiguration configuration, IOptions<DatabaseSettings> databaseSettings)
     {
         _articleService = articleService;
         _logger = logger;
         _configuration = configuration;
+        _databaseSettings = databaseSettings;
     }
 
     [HttpGet]
@@ -114,11 +118,7 @@ public class ArticleController : ControllerBase
     {
         return Ok(new
         {
-            DbHost = _configuration["DB:Host"],
-            DbPort = _configuration["DB:Port"],
-            DbPassword = _configuration["DB:Password"],
-            DbName = _configuration["DB:Name"],
-            DbUserName = _configuration["DB:UserName"],
+            _databaseSettings.Value
         }); 
     }
 }
