@@ -20,26 +20,28 @@ public class VideoService : IVideoService
     }
 
     public async Task<PagedResponse<VideoResponse>> GetAllPagingAsync(
-        int page, int size, string? search, int shorts)
+        int? page, int? size, string? search, int shorts)
     {
-        if (size <= 0)
+        if (page is <= 0)
         {
-            throw new ArgumentException("Size must be at least 1");
+            page = 1;
         }
 
-        if (size > 40)
+        if (size is > 40 or <= 0)
         {
-            throw new ArgumentException("Size cannot be greater than 40");
+            size = 10;
         }
 
+        int newPage = page ?? 1;
+        int newSize = size ?? 10;
         bool isShort = shorts == 1;
-        return await _videoRepository.GetAllPagingAsync(page, size, search, isShort);
+        return await _videoRepository.GetAllPagingAsync(newPage, newSize, search, isShort);
     }
 
     public async Task<VideoResponse> GetByIdAsync(string videoId)
     {
         var video = await _videoRepository.GetByIdAsync(videoId);
-        
+
         if (video == null)
         {
             throw new KeyNotFoundException($"Video not found with id: {videoId}");
@@ -48,44 +50,17 @@ public class VideoService : IVideoService
         return video;
     }
 
-    public async Task<List<VideoResponse>> GetByPlaylistIdAsync(string playlistId)
-    {
-        return await _videoRepository.GetByPlaylistIdAsync(playlistId);
-    }
-
-    public async Task<List<VideoResponse>> GetByPlaylistIdSortedAsync(
-        string playlistId, string sortBy, string sortOrder)
-    {
-        return await _videoRepository.GetByPlaylistIdSortedAsync(playlistId, sortBy, sortOrder);
-    }
-
-    public async Task<PagedVideosResponse> GetByPlaylistIdPagedAsync(
-        string playlistId, int page, int size)
-    {
-        if (size <= 0)
-        {
-            throw new ArgumentException("Invalid maxResult value. maxResult cannot be zero or negative");
-        }
-
-        return await _videoRepository.GetByPlaylistIdPagedAsync(playlistId, page, size);
-    }
-
-    public async Task<List<VideoResponse>> GetAllSortedAsync(string sortBy, string sortOrder)
-    {
-        return await _videoRepository.GetAllSortedAsync(sortBy, sortOrder);
-    }
-
     public async Task<UpdateVideoRequest> UpdateAsync(string videoId, UpdateVideoRequest request)
     {
         var video = await _videoRepository.GetVideoEntityByIdAsync(videoId);
-        
+
         if (video == null)
         {
             throw new KeyNotFoundException($"Video not found with id: {videoId}");
         }
 
         video.Title = request.Title;
-        
+
         if (!string.IsNullOrEmpty(request.PublishedAt))
         {
             if (DateTimeOffset.TryParse(request.PublishedAt, out var publishedAt))
@@ -117,7 +92,7 @@ public class VideoService : IVideoService
     public async Task<VideoResponse> GetLatestVideoAsync()
     {
         var video = await _videoRepository.GetLatestVideoAsync();
-        
+
         if (video == null)
         {
             throw new KeyNotFoundException("No videos found");

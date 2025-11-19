@@ -30,51 +30,10 @@ public class VideoController : ControllerBase
         [FromQuery] string? sortOrder = null,
         [FromQuery] int? maxResult = null)
     {
-        // GET /api/videos?playlistId=X&page=Y&maxResult=Z
-        if (!string.IsNullOrEmpty(playlistId) && page.HasValue && maxResult.HasValue)
-        {
-            _logger.Information("GetByPlaylistIdPaged endpoint called");
-            var result = await _videoService.GetByPlaylistIdPagedAsync(playlistId, page.Value, maxResult.Value);
-            return Ok(result);
-        }
-
-        // GET /api/videos?playlistId=X&sortBy=Y&sortOrder=Z
-        if (!string.IsNullOrEmpty(playlistId) && !string.IsNullOrEmpty(sortBy) && !string.IsNullOrEmpty(sortOrder))
-        {
-            _logger.Information("GetPlaylistVideosSorted endpoint called");
-            var videos = await _videoService.GetByPlaylistIdSortedAsync(playlistId, sortBy, sortOrder);
-            return Ok(videos);
-        }
-
-        // GET /api/videos?playlistId=X
-        if (!string.IsNullOrEmpty(playlistId))
-        {
-            _logger.Information("GetByPlaylistId endpoint called with playlistId: {PlaylistId}", playlistId);
-            var videos = await _videoService.GetByPlaylistIdAsync(playlistId);
-            return Ok(videos);
-        }
-
-        // GET /api/videos?sortBy=X&sortOrder=Y
-        if (!string.IsNullOrEmpty(sortBy) && !string.IsNullOrEmpty(sortOrder))
-        {
-            _logger.Information("GetAllSorted endpoint called");
-            var videos = await _videoService.GetAllSortedAsync(sortBy, sortOrder);
-            return Ok(videos);
-        }
-
-        // GET /api/videos?page=X&size=Y
-        if (page.HasValue && size.HasValue)
-        {
-            _logger.Information("GetAllPaging endpoint called with page: {Page}, size: {Size}", page, size);
-            var result = await _videoService.GetAllPagingAsync(
-                page.Value, size.Value, search, shorts);
-            return Ok(result);
-        }
-
-        // GET /api/videos (no parameters)
-        _logger.Information("GetAll endpoint called");
-        var allVideos = await _videoService.GetAllAsync();
-        return Ok(allVideos);
+        _logger.Information("GetAllPaging endpoint called with page: {Page}, size: {Size}", page, size);
+        var result = await _videoService.GetAllPagingAsync(
+            page, size, search, shorts);
+        return Ok(result);
     }
 
     [HttpGet("{id}")]

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using YoutubeApiSynchronize.Application.Dtos.Common;
 using YoutubeApiSynchronize.Application.Dtos.Video.Responses;
 using YoutubeApiSynchronize.Core.Entities;
 using YoutubeApiSynchronize.Core.Interfaces.Video;
@@ -31,12 +32,12 @@ public class VideoRepository : IVideoRepository
             .ToListAsync();
     }
 
-    public async Task<Application.Dtos.Common.PagedResponse<VideoResponse>> GetAllPagingAsync(
+    public async Task<PagedResponse<VideoResponse>> GetAllPagingAsync(
         int page, int size, string? search, bool isShort)
     {
         var query = _context.Videos.AsQueryable();
 
-        // Apply search filter
+        // 🔍 Search filter
         if (!string.IsNullOrWhiteSpace(search))
         {
             query = query.Where(v =>
@@ -44,14 +45,17 @@ public class VideoRepository : IVideoRepository
                 (v.Description != null && v.Description.Contains(search)));
         }
 
-        // Apply shorts filter
-        query = query.Where(v => v.IsShort == isShort);
+        // 🎬 Shorts filter (only when true)
+        if (isShort)
+            query = query.Where(v => v.IsShort == true);
 
+        // 📌 Total count before paging
         var totalCount = await query.LongCountAsync();
 
+        // ⚡ Paging + Sorting + Projection
         var videos = await query
             .OrderByDescending(v => v.PublishedAt)
-            .Skip(page * size)
+            .Skip((page - 1) * size) // ✔ Correct paging
             .Take(size)
             .Select(v => new VideoResponse
             {
@@ -64,20 +68,19 @@ public class VideoRepository : IVideoRepository
             })
             .ToListAsync();
 
-        var totalPages = (int)Math.Ceiling(totalCount / (double)size);
-
-        return new Application.Dtos.Common.PagedResponse<VideoResponse>
+        return new PagedResponse<VideoResponse>
         {
             Content = videos,
-            Page = new Application.Dtos.Common.PageInfo
+            Page = new PageInfo
             {
                 Size = size,
                 Number = page,
                 TotalElements = (int)totalCount,
-                TotalPages = totalPages
+                TotalPages = (int)Math.Ceiling(totalCount / (double)size)
             }
         };
     }
+
 
     public async Task<VideoResponse?> GetByIdAsync(string videoId)
     {

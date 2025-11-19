@@ -16,7 +16,7 @@
       "launchUrl": "swagger",
       "applicationUrl": "http://localhost:8075",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_ENVIRONMENT": "Local",
         "ASPNETCORE_URLS": "http://+:8075",
         "DB__Host": "84.247.132.207",
         "DB__Name": "esmdb",
@@ -27,7 +27,7 @@
         "Cloudinary__ApiKey": "712786691512151",
         "Cloudinary__ApiSecret": "AIp9AEAYuHYk_IQqDDozHF4Ew9M",
         "FolderRoot": "esm/dev",
-        "SeqUrl": "http://localhost:5341"
+        "SeqUrl": "https://seq.nizamiyyemedresesi.az"
       }
     },
     "https": {
