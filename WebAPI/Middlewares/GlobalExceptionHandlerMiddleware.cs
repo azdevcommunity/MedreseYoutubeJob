@@ -38,20 +38,20 @@ public class GlobalExceptionHandlerMiddleware
             case KeyNotFoundException:
                 context.Response.StatusCode = (int)HttpStatusCode.NotFound;
                 response.Message = exception.Message;
-                _logger.Warning(exception, "Resource not found: {Message}", exception.Message);
+                _logger.Error(exception, "Resource not found: {Message}", exception.Message);
                 break;
 
             case ArgumentException:
             case InvalidOperationException:
                 context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
                 response.Message = exception.Message;
-                _logger.Warning(exception, "Bad request: {Message}", exception.Message);
+                _logger.Error(exception, "Bad request: {Message}", exception.Message);
                 break;
 
             case UnauthorizedAccessException:
                 context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
                 response.Message = "Unauthorized access";
-                _logger.Warning(exception, "Unauthorized access attempt");
+                _logger.Error(exception, "Unauthorized access attempt");
                 break;
 
             default:

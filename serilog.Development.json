@@ -1,18 +1,5 @@
 {
   "Serilog": {
-    "Using": [
-      "Serilog.Sinks.Console",
-      "Serilog.Sinks.File"
-    ],
-    "MinimumLevel": {
-      "Default": "Information",
-      "Override": {
-        "Microsoft": "Warning",
-        "Microsoft.AspNetCore": "Warning",
-        "System": "Warning",
-        "Microsoft.EntityFrameworkCore": "Error"
-      }
-    },
     "WriteTo": [
       {
         "Name": "Console",
@@ -32,17 +19,6 @@
           "outputTemplate": "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}"
         }
       }
-    ],
-    "Enrich": [
-      "FromLogContext",
-      "WithMachineName",
-      "WithThreadId",
-      "WithClientIp",
-      "WithCorrelationId",
-      "WithRequestId"
-    ],
-    "Properties": {
-      "Application": "YoutubeApiSynchronize"
-    }
+    ]
   }
 }

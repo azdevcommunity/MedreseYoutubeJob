@@ -9,7 +9,6 @@ public static class LoggingConfig
 {
     public static WebApplicationBuilder AddLoggingConfiguration(this WebApplicationBuilder builder)
     {
-        // Add Serilog configuration from separate file
         builder.Configuration
             .AddJsonFile("serilog.json", optional: false, reloadOnChange: true)
             .AddJsonFile($"serilog.{builder.Configuration["ASPNETCORE_ENVIRONMENT"]}.json", optional: true,
@@ -26,22 +25,8 @@ public static class LoggingConfig
                 .Enrich.FromLogContext()
                 .Enrich.WithProperty("Application", "YoutubeApiSynchronize")
                 .Enrich.WithProperty("Environment", env)
-                .Enrich.WithProperty("Hostname", hostname);
-
-            // Loki optional yazılsın
-            var logConfig = builder.Configuration.GetSection(nameof(LogConfig)).Get<LogConfig>();
-            if (!string.IsNullOrWhiteSpace(logConfig?.Loki))
-            {
-                config.WriteTo.GrafanaLoki(
-                    uri: logConfig.Loki,
-                    labels: new[]
-                    {
-                        new LokiLabel { Key = "app", Value = "youtube-job-api" },
-                        new LokiLabel { Key = "env", Value = env },
-                        new LokiLabel { Key = "host", Value = hostname }
-                    }
-                );
-            }
+                .Enrich.WithProperty("Hostname", hostname)
+                .WriteTo.Seq(builder.Configuration["SeqUrl"]!);
         });
 
 
