@@ -31,8 +31,8 @@ public class VideoController : ControllerBase
         [FromQuery] int? maxResult = null)
     {
         _logger.Information("GetAllPaging endpoint called with page: {Page}, size: {Size}", page, size);
-        var result = await _videoService.GetAllPagingAsync(
-            page, size, search, shorts);
+         var result = await _videoService.GetAllPagingAsync(
+                page, size, search, shorts, playlistId, sortBy, sortOrder, maxResult);
         return Ok(result);
     }
 

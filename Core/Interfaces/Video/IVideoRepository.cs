@@ -6,7 +6,10 @@ namespace YoutubeApiSynchronize.Core.Interfaces.Video;
 public interface IVideoRepository
 {
     Task<List<VideoResponse>> GetAllAsync();
-    Task<PagedResponse<VideoResponse>> GetAllPagingAsync(int page, int size, string? search, bool isShort);
+
+    Task<PagedResponse<VideoResponse>> GetAllPagingAsync(int page, int size, string? search, bool isShort, string? playlistId,
+        string? sortBy, string? sortOrder, int? maxResult);
+
     Task<VideoResponse?> GetByIdAsync(string videoId);
     Task<Entities.Video?> GetVideoEntityByIdAsync(string videoId);
     Task<Entities.Video> UpdateAsync(Entities.Video video);

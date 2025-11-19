@@ -20,7 +20,8 @@ public class VideoService : IVideoService
     }
 
     public async Task<PagedResponse<VideoResponse>> GetAllPagingAsync(
-        int? page, int? size, string? search, int shorts)
+        int? page, int? size, string? search, int shorts,
+        string? playlistId, string? sortBy, string? sortOrder, int? maxResult)
     {
         if (page is <= 0)
         {
@@ -35,7 +36,14 @@ public class VideoService : IVideoService
         int newPage = page ?? 1;
         int newSize = size ?? 10;
         bool isShort = shorts == 1;
-        return await _videoRepository.GetAllPagingAsync(newPage, newSize, search, isShort);
+
+        if (sortBy is null)
+        {
+            sortBy = "Title";
+        }
+        
+        return await _videoRepository.GetAllPagingAsync(newPage, newSize, search, isShort, playlistId, sortBy,
+            sortOrder, maxResult);
     }
 
     public async Task<VideoResponse> GetByIdAsync(string videoId)

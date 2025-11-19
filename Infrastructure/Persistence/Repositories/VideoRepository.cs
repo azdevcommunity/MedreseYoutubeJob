@@ -33,29 +33,60 @@ public class VideoRepository : IVideoRepository
     }
 
     public async Task<PagedResponse<VideoResponse>> GetAllPagingAsync(
-        int page, int size, string? search, bool isShort)
+        int page, int size, string? search, bool isShort, string? playlistId, string? sortBy, string? sortOrder,
+        int? maxResult)
     {
-        var query = _context.Videos.AsQueryable();
+        IQueryable<Video> query = _context.Videos.AsQueryable();
 
         // 🔍 Search filter
         if (!string.IsNullOrWhiteSpace(search))
         {
             query = query.Where(v =>
-                v.Title.Contains(search) ||
-                (v.Description != null && v.Description.Contains(search)));
+                EF.Functions.ILike(v.Title, $"%{search}%") ||
+                (v.Description != null && EF.Functions.ILike(v.Description, $"%{search}%")));
         }
 
-        // 🎬 Shorts filter (only when true)
+        // 🎬 Shorts filter (only if true)
         if (isShort)
+        {
             query = query.Where(v => v.IsShort == true);
+        }
 
-        // 📌 Total count before paging
+        // 📺 Playlist filter
+        if (!string.IsNullOrWhiteSpace(playlistId))
+        {
+            query =
+                from v in query
+                join pv in _context.PlaylistVideos
+                    on v.VideoId equals pv.VideoId
+                where pv.PlaylistId == playlistId
+                select v;
+        }
+
+        // 🎚 Sorting
+        if (!string.IsNullOrWhiteSpace(sortBy))
+        {
+            bool desc = (sortOrder ?? "asc").ToLower() == "desc";
+
+            query = desc
+                ? query.OrderByDescending(x => EF.Property<object>(x, sortBy))
+                : query.OrderBy(x => EF.Property<object>(x, sortBy));
+        }
+        else
+        {
+            query = query.OrderByDescending(v => v.PublishedAt);
+        }
+
+        // ⏳ Total before paging
         var totalCount = await query.LongCountAsync();
 
-        // ⚡ Paging + Sorting + Projection
+        // 📌 maxResult (limits total returned items)
+        if (maxResult.HasValue && maxResult.Value > 0)
+            query = query.Take(maxResult.Value);
+
+        // 📄 Paging
         var videos = await query
-            .OrderByDescending(v => v.PublishedAt)
-            .Skip((page - 1) * size) // ✔ Correct paging
+            .Skip((page - 1) * size)
             .Take(size)
             .Select(v => new VideoResponse
             {
