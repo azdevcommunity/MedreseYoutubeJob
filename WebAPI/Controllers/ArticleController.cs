@@ -12,11 +12,13 @@ public class ArticleController : ControllerBase
 {
     private readonly IArticleService _articleService;
     private readonly ILogger _logger;
+    private readonly IConfiguration _configuration;
 
-    public ArticleController(IArticleService articleService, ILogger logger)
+    public ArticleController(IArticleService articleService, ILogger logger, IConfiguration configuration)
     {
         _articleService = articleService;
         _logger = logger;
+        _configuration = configuration;
     }
 
     [HttpGet]
@@ -105,5 +107,18 @@ public class ArticleController : ControllerBase
         _logger.Information("DeleteArticles endpoint called with {Count} ids", request.Ids.Count);
         await _articleService.DeleteArticlesAsync(request);
         return NoContent();
+    }
+
+    [HttpGet("test")]
+    public IActionResult TestConnection()
+    {
+        return Ok(new
+        {
+            DbHost = _configuration["DB:Host"],
+            DbPort = _configuration["DB:Port"],
+            DbPassword = _configuration["DB:Password"],
+            DbName = _configuration["DB:Name"],
+            DbUserName = _configuration["DB:UserName"],
+        }); 
     }
 }
