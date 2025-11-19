@@ -66,9 +66,9 @@ public class VideoController : ControllerBase
         if (page.HasValue && size.HasValue)
         {
             _logger.Information("GetAllPaging endpoint called with page: {Page}, size: {Size}", page, size);
-            var (items, totalCount) = await _videoService.GetAllPagingAsync(
+            var result = await _videoService.GetAllPagingAsync(
                 page.Value, size.Value, search, shorts);
-            return Ok(new { items, totalCount });
+            return Ok(result);
         }
 
         // GET /api/videos (no parameters)

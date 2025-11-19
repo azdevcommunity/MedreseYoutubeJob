@@ -1,3 +1,4 @@
+using YoutubeApiSynchronize.Application.Dtos.Common;
 using YoutubeApiSynchronize.Application.Dtos.Video.Responses;
 
 namespace YoutubeApiSynchronize.Core.Interfaces.Video;
@@ -5,7 +6,7 @@ namespace YoutubeApiSynchronize.Core.Interfaces.Video;
 public interface IVideoRepository
 {
     Task<List<VideoResponse>> GetAllAsync();
-    Task<(List<VideoResponse> Items, long TotalCount)> GetAllPagingAsync(int page, int size, string? search, bool isShort);
+    Task<PagedResponse<VideoResponse>> GetAllPagingAsync(int page, int size, string? search, bool isShort);
     Task<VideoResponse?> GetByIdAsync(string videoId);
     Task<List<VideoResponse>> GetByPlaylistIdAsync(string playlistId);
     Task<List<VideoResponse>> GetByPlaylistIdSortedAsync(string playlistId, string sortBy, string sortOrder);

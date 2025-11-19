@@ -47,4 +47,9 @@ public class TagRepository : ITagRepository
             await _context.SaveChangesAsync();
         }
     }
+
+    public async Task<bool> ExistsByName(string name)
+    {
+        return await _context.Tags.AnyAsync(t => t.Name == name);
+    }
 }

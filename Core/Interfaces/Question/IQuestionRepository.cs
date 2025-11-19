@@ -11,6 +11,9 @@ public interface IQuestionRepository
     Task<QuestionSearchResponse?> GetQuestionByIdAsync(int id);
     Task<Entities.Question?> GetByIdAsync(int id);
     Task<Entities.Question> CreateAsync(Entities.Question question);
+    Task<Entities.Question> CreateQuestionWithRelationsAsync(
+        string questionText, string answer, string answerType, int? authorId,
+        HashSet<int> categoryIds, HashSet<int> tagIds);
     Task<Entities.Question> UpdateAsync(Entities.Question question);
     Task DeleteAsync(int id);
     Task<bool> ExistsByIdAsync(int id);

@@ -24,13 +24,14 @@ public class QuestionService : IQuestionService
 
         return new PagedQuestionResponse
         {
-            Items = items,
-            TotalCount = totalCount,
-            PageNumber = page,
-            PageSize = size,
-            TotalPages = totalPages,
-            HasPreviousPage = page > 0,
-            HasNextPage = page < totalPages - 1
+            Content = items,
+            Page = new Application.Dtos.Common.PageInfo
+            {
+                Size = size,
+                Number = page,
+                TotalElements = (int)totalCount,
+                TotalPages = totalPages
+            }
         };
     }
 
@@ -54,29 +55,15 @@ public class QuestionService : IQuestionService
             throw new InvalidOperationException("Question with same text already exists");
         }
 
-        var question = new Core.Entities.Question
-        {
-            QuestionText = request.Question,
-            Answer = request.Answer,
-            AnswerType = request.AnswerType,
-            AuthorId = request.Author,
-            CreatedDate = DateTime.UtcNow,
-            ViewCount = 0
-        };
-
-        var createdQuestion = await _questionRepository.CreateAsync(question);
-
-        // Add question categories
-        if (request.Categories.Any())
-        {
-            await _questionRepository.AddQuestionCategoriesAsync(createdQuestion.Id, request.Categories);
-        }
-
-        // Add question tags
-        if (request.Tags.Any())
-        {
-            await _questionRepository.AddQuestionTagsAsync(createdQuestion.Id, request.Tags);
-        }
+        // Use transaction to ensure atomicity
+        var createdQuestion = await _questionRepository.CreateQuestionWithRelationsAsync(
+            request.Question,
+            request.Answer,
+            request.AnswerType,
+            request.Author ,
+            request.Categories,
+            request.Tags
+        );
 
         return new QuestionResponse
         {

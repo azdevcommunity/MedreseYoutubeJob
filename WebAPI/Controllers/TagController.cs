@@ -7,7 +7,7 @@ using ILogger = Serilog.ILogger;
 namespace YoutubeApiSynchronize.WebAPI.Controllers;
 
 [ApiController]
-[Route("/api/[controller]")]
+[Route("/api/tags")]
 public class TagController : ControllerBase
 {
     private readonly ITagService _tagService;
@@ -57,13 +57,5 @@ public class TagController : ControllerBase
         _logger.Information("DeleteTag endpoint called with id: {Id}", id);
         await _tagService.DeleteAsync(id);
         return NoContent();
-    }
-
-    [HttpGet("clear-cache")]
-    public async Task<ActionResult<string>> ClearCache()
-    {
-        _logger.Information("ClearCache endpoint called");
-        var result = await _tagService.ClearCacheAsync();
-        return Ok(result);
     }
 }

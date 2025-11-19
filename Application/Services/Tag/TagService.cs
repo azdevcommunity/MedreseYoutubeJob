@@ -32,6 +32,11 @@ public class TagService : ITagService
 
     public async Task<TagResponse> CreateAsync(CreateTagRequest request)
     {
+        if (await _tagRepository.ExistsByName(request.Name))
+        {
+            throw new InvalidOperationException($"Tag with name {request.Name} already exists");
+        }
+        
         var tag = new Core.Entities.Tag
         {
             Name = request.Name,
@@ -66,13 +71,6 @@ public class TagService : ITagService
         }
 
         await _tagRepository.DeleteAsync(id);
-    }
-
-    public Task<string> ClearCacheAsync()
-    {
-        // Cache clearing logic can be implemented here if needed
-        // For now, returning a simple message
-        return Task.FromResult("Cache cleared successfully");
     }
 
     private TagResponse MapToResponse(Core.Entities.Tag tag)

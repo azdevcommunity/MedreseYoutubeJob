@@ -10,13 +10,14 @@ public class Category
     [Column("id")]
     public int Id { get; set; }
     
+    [Column("parent_id")]
+    public int? ParentId { get; set; }
+    
     [Required]
     [Column("name")]
     public string Name { get; set; } = string.Empty;
     
-    [Column("parent_id")]
-    public int? ParentId { get; set; }
-    
-    [Column("slug")]
-    public string? Slug { get; set; }
+    [Required]
+    [Column("is_active")]
+    public bool IsActive { get; set; } = true;
 }

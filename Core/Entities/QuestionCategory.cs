@@ -7,6 +7,7 @@ namespace YoutubeApiSynchronize.Core.Entities;
 public class QuestionCategory
 {
     [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Column("id")]
     public int Id { get; set; }
 

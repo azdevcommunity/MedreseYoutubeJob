@@ -133,6 +133,85 @@ public class QuestionRepository : IQuestionRepository
         return question;
     }
 
+    public async Task<Core.Entities.Question> CreateQuestionWithRelationsAsync(
+        string questionText, string answer, string answerType, int? authorId,
+        HashSet<int> categoryIds, HashSet<int> tagIds)
+    {
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        
+        try
+        {
+            var question = new Core.Entities.Question
+            {
+                QuestionText = questionText,
+                Answer = answer,
+                AnswerType = answerType,
+                AuthorId = authorId,
+                CreatedDate = DateTime.UtcNow,
+                ViewCount = 0
+            };
+
+            await _context.Questions.AddAsync(question);
+            await _context.SaveChangesAsync();
+
+            // Add question categories if any
+            if (categoryIds.Any())
+            {
+                // Remove any existing categories for this question (in case of orphaned data)
+                var existingCategories = await _context.QuestionCategories
+                    .Where(qc => qc.QuestionId == question.Id)
+                    .ToListAsync();
+                
+                if (existingCategories.Any())
+                {
+                    _context.QuestionCategories.RemoveRange(existingCategories);
+                    await _context.SaveChangesAsync();
+                }
+
+                var questionCategories = categoryIds.Select(catId => new QuestionCategory
+                {
+                    QuestionId = question.Id,
+                    CategoryId = catId
+                }).ToList();
+
+                await _context.QuestionCategories.AddRangeAsync(questionCategories);
+                await _context.SaveChangesAsync();
+            }
+
+            // Add question tags if any
+            if (tagIds.Any())
+            {
+                // Remove any existing tags for this question (in case of orphaned data)
+                var existingTags = await _context.QuestionTags
+                    .Where(qt => qt.QuestionId == question.Id)
+                    .ToListAsync();
+                
+                if (existingTags.Any())
+                {
+                    _context.QuestionTags.RemoveRange(existingTags);
+                    await _context.SaveChangesAsync();
+                }
+
+                var questionTags = tagIds.Select(tagId => new QuestionTag
+                {
+                    QuestionId = question.Id,
+                    TagId = tagId
+                }).ToList();
+
+                await _context.QuestionTags.AddRangeAsync(questionTags);
+                await _context.SaveChangesAsync();
+            }
+
+            await transaction.CommitAsync();
+            return question;
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
+    }
+
     public async Task<Core.Entities.Question> UpdateAsync(Core.Entities.Question question)
     {
         _context.Questions.Update(question);

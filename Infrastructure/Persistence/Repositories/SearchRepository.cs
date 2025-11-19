@@ -19,27 +19,27 @@ public class SearchRepository : ISearchRepository
         int limit, List<long>? categoryIds, string? search)
     {
         var query = from article in _context.Articles
-                    join author in _context.Authors on article.AuthorId equals author.Id
-                    select new
-                    {
-                        Article = article,
-                        Author = author
-                    };
+            join author in _context.Authors on article.AuthorId equals author.Id
+            select new
+            {
+                Article = article,
+                Author = author
+            };
 
         // Apply category filter
         if (categoryIds != null && categoryIds.Any())
         {
             query = from item in query
-                    join ac in _context.ArticleCategories on item.Article.Id equals ac.ArticleId
-                    where categoryIds.Contains(ac.CategoryId)
-                    select item;
+                join ac in _context.ArticleCategories on item.Article.Id equals ac.ArticleId
+                where categoryIds.Contains(ac.CategoryId)
+                select item;
         }
 
         // Apply search filter
         if (!string.IsNullOrWhiteSpace(search))
         {
-            query = query.Where(x => 
-                x.Article.Title.Contains(search) || 
+            query = query.Where(x =>
+                x.Article.Title.Contains(search) ||
                 x.Article.Content.Contains(search));
         }
 
@@ -60,8 +60,8 @@ public class SearchRepository : ISearchRepository
             PublishedAt = x.Article.PublishedAt,
             AuthorName = x.Author.Name,
             AuthorImage = x.Author.Image,
-            Categories = categoriesDict.ContainsKey(x.Article.Id) 
-                ? categoriesDict[x.Article.Id] 
+            Categories = categoriesDict.ContainsKey(x.Article.Id)
+                ? categoriesDict[x.Article.Id]
                 : new List<string>()
         }).ToList();
 
@@ -75,9 +75,10 @@ public class SearchRepository : ISearchRepository
         // Apply search filter
         if (!string.IsNullOrWhiteSpace(search))
         {
-            query = query.Where(v => 
-                v.Title.Contains(search) || 
-                (v.Description != null && v.Description.Contains(search)));
+            query = query.Where(v =>
+                EF.Functions.ILike(v.Title, $"%{search}%") ||
+                EF.Functions.ILike(v.Description!, $"%{search}%")
+            );
         }
 
         var videos = await query
@@ -100,13 +101,13 @@ public class SearchRepository : ISearchRepository
     private async Task<Dictionary<int, List<string>>> GetCategoriesForArticlesAsync(List<int> articleIds)
     {
         var categories = await (from ac in _context.ArticleCategories
-                               join c in _context.Categories on ac.CategoryId equals c.Id
-                               where articleIds.Contains(ac.ArticleId)
-                               select new
-                               {
-                                   ac.ArticleId,
-                                   c.Name
-                               }).ToListAsync();
+            join c in _context.Categories on ac.CategoryId equals c.Id
+            where articleIds.Contains(ac.ArticleId)
+            select new
+            {
+                ac.ArticleId,
+                c.Name
+            }).ToListAsync();
 
         return categories
             .GroupBy(x => x.ArticleId)

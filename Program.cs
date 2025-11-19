@@ -1,3 +1,4 @@
+using Serilog;
 using YoutubeApiSynchronize.WebAPI.Configurations;
 using YoutubeApiSynchronize.WebAPI.Middlewares;
 
@@ -16,10 +17,10 @@ builder.Services.AddHealthChecks();
 builder.Services.AddWebApiServices(builder.Configuration);
 
 var app = builder.Build();
+app.UseSerilogRequestLogging();
 
 // Add Global Error Handling Middleware
 app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
-
 // Configure HTTP Pipeline
 app.UseSwagger();
 app.UseSwaggerUI();

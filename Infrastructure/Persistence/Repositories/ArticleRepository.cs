@@ -159,6 +159,61 @@ public class ArticleRepository : IArticleRepository
         return article;
     }
 
+    public async Task<Core.Entities.Article> CreateArticleWithCategoriesAsync(
+        string publishedAt, string title, string content, string imageUrl, 
+        int authorId, HashSet<int> categoryIds)
+    {
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        
+        try
+        {
+            var article = new Core.Entities.Article
+            {
+                PublishedAt = publishedAt,
+                Title = title,
+                Content = content,
+                Image = imageUrl,
+                AuthorId = authorId,
+                ReadCount = 0
+            };
+
+            await _context.Articles.AddAsync(article);
+            await _context.SaveChangesAsync();
+
+            // Add article categories if any
+            if (categoryIds.Any())
+            {
+                // Remove any existing categories for this article (in case of orphaned data)
+                var existingCategories = await _context.ArticleCategories
+                    .Where(ac => ac.ArticleId == article.Id)
+                    .ToListAsync();
+                
+                if (existingCategories.Any())
+                {
+                    _context.ArticleCategories.RemoveRange(existingCategories);
+                    await _context.SaveChangesAsync();
+                }
+
+                var articleCategories = categoryIds.Select(catId => new ArticleCategory
+                {
+                    ArticleId = article.Id,
+                    CategoryId = catId
+                }).ToList();
+
+                await _context.ArticleCategories.AddRangeAsync(articleCategories);
+                await _context.SaveChangesAsync();
+            }
+
+            await transaction.CommitAsync();
+            return article;
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
+    }
+
     public async Task<Core.Entities.Article> UpdateAsync(Core.Entities.Article article)
     {
         _context.Articles.Update(article);

@@ -7,4 +7,6 @@ public interface ITagRepository
     Task<Entities.Tag> CreateAsync(Entities.Tag tag);
     Task<Entities.Tag> UpdateAsync(Entities.Tag tag);
     Task DeleteAsync(int id);
+    
+    Task<bool> ExistsByName (string name);
 }

@@ -66,7 +66,11 @@ public class ContactUsRepository : IContactUsRepository
 
     public async Task UpdateRangeAsync(List<ContactUs> contacts)
     {
-        _context.ContactUs.UpdateRange(contacts);
+        foreach (var contact in contacts)
+        {
+            // Only update the Read property to avoid DateTime issues
+            _context.Entry(contact).Property(c => c.Read).IsModified = true;
+        }
         await _context.SaveChangesAsync();
     }
 

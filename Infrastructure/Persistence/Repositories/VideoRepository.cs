@@ -31,7 +31,7 @@ public class VideoRepository : IVideoRepository
             .ToListAsync();
     }
 
-    public async Task<(List<VideoResponse> Items, long TotalCount)> GetAllPagingAsync(
+    public async Task<Application.Dtos.Common.PagedResponse<VideoResponse>> GetAllPagingAsync(
         int page, int size, string? search, bool isShort)
     {
         var query = _context.Videos.AsQueryable();
@@ -64,7 +64,19 @@ public class VideoRepository : IVideoRepository
             })
             .ToListAsync();
 
-        return (videos, totalCount);
+        var totalPages = (int)Math.Ceiling(totalCount / (double)size);
+
+        return new Application.Dtos.Common.PagedResponse<VideoResponse>
+        {
+            Content = videos,
+            Page = new Application.Dtos.Common.PageInfo
+            {
+                Size = size,
+                Number = page,
+                TotalElements = (int)totalCount,
+                TotalPages = totalPages
+            }
+        };
     }
 
     public async Task<VideoResponse?> GetByIdAsync(string videoId)
@@ -175,11 +187,14 @@ public class VideoRepository : IVideoRepository
 
         return new PagedVideosResponse
         {
-            VideoResponses = videos,
-            ResultForCurrentPage = videos.Count,
-            TotalVideo = totalVideos,
-            CurrentPage = page,
-            TotalPageCount = totalPageCount
+            Content = videos,
+            Page = new Application.Dtos.Common.PageInfo
+            {
+                Size = size,
+                Number = page - 1,
+                TotalElements = totalVideos,
+                TotalPages = totalPageCount
+            }
         };
     }
 

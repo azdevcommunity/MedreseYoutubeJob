@@ -14,15 +14,19 @@
       "dotnetRunMessages": true,
       "launchBrowser": true,
       "launchUrl": "swagger",
-      "applicationUrl": "http://localhost:5225",
+      "applicationUrl": "http://localhost:8075",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "ASPNETCORE_URLS": "http://+:8075",
         "DB__Host": "84.247.132.207",
         "DB__Name": "esmdb",
         "DB__Password": "123456789",
-        "DB__Port":"5432",
-        "DB__Username":"esm_user"
+        "DB__Port": "5433",
+        "DB__Username": "esm_user",
+        "Cloudinary__CloudName": "dhhlnrons",
+        "Cloudinary__ApiKey": "712786691512151",
+        "Cloudinary__ApiSecret": "AIp9AEAYuHYk_IQqDDozHF4Ew9M",
+        "FolderRoot": "esm/dev"
       }
     },
     "https": {

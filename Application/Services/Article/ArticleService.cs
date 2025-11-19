@@ -36,13 +36,14 @@ public class ArticleService : IArticleService
 
         return new PagedArticleResponse
         {
-            Items = items,
-            TotalCount = totalCount,
-            PageNumber = page,
-            PageSize = size,
-            TotalPages = totalPages,
-            HasPreviousPage = page > 0,
-            HasNextPage = page < totalPages - 1
+            Content = items,
+            Page = new Application.Dtos.Common.PageInfo
+            {
+                Size = size,
+                Number = page,
+                TotalElements = (int)totalCount,
+                TotalPages = totalPages
+            }
         };
     }
 
@@ -98,30 +99,31 @@ public class ArticleService : IArticleService
             throw new KeyNotFoundException($"Author with id {request.AuthorId} not found");
         }
 
-        // Upload image to Cloudinary
+        // Upload image to Cloudinary first (before transaction)
         var imageUrl = await _fileService.UploadFileAsync(request.Image, $"{_folderRoot}/articles");
 
-        var article = new Core.Entities.Article
+        try
         {
-            PublishedAt = request.PublishedAt,
-            Title = request.Title,
-            Content = request.Content,
-            Image = imageUrl,
-            AuthorId = request.AuthorId,
-            ReadCount = 0
-        };
+            // Use transaction to ensure atomicity
+            var createdArticle = await _articleRepository.CreateArticleWithCategoriesAsync(
+                request.PublishedAt,
+                request.Title,
+                request.Content,
+                imageUrl,
+                request.AuthorId,
+                request.Categories
+            );
 
-        var createdArticle = await _articleRepository.CreateAsync(article);
-
-        // Add article categories
-        if (request.Categories.Any())
-        {
-            await _articleRepository.AddArticleCategoriesAsync(createdArticle.Id, request.Categories);
+            // Fetch and return complete article response
+            var articleResponse = await _articleRepository.GetArticleByIdAsync(createdArticle.Id, true);
+            return articleResponse ?? throw new InvalidOperationException("Failed to retrieve created article");
         }
-
-        // Fetch and return complete article response
-        var articleResponse = await _articleRepository.GetArticleByIdAsync(createdArticle.Id, true);
-        return articleResponse ?? throw new InvalidOperationException("Failed to retrieve created article");
+        catch
+        {
+            // If article creation fails, delete the uploaded image
+            await _fileService.DeleteFileAsync(imageUrl, $"{_folderRoot}/articles");
+            throw;
+        }
     }
 
     public async Task<Core.Entities.Article> UpdateArticleAsync(int id, UpdateArticleRequest request)

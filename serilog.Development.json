@@ -1,6 +1,9 @@
 {
   "Serilog": {
-    "Using": [ "Serilog.Sinks.Console", "Serilog.Sinks.File" ],
+    "Using": [
+      "Serilog.Sinks.Console",
+      "Serilog.Sinks.File"
+    ],
     "MinimumLevel": {
       "Default": "Information",
       "Override": {
@@ -15,6 +18,18 @@
         "Name": "Console",
         "Args": {
           "outputTemplate": "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext}: {Message:lj}{NewLine}"
+        }
+      },
+      {
+        "Name": "File",
+        "Args": {
+          "path": "logs/log-.txt",
+          "rollingInterval": "Day",
+          "retainedFileCountLimit": 14,
+          "fileSizeLimitBytes": 5242880,
+          "rollOnFileSizeLimit": true,
+          "buffered": true,
+          "outputTemplate": "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}"
         }
       }
     ],

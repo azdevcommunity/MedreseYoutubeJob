@@ -9,5 +9,5 @@ public class UpdateCategoryRequest
     
     public int? ParentId { get; set; }
     
-    public string? Slug { get; set; }
+    public bool IsActive { get; set; }
 }

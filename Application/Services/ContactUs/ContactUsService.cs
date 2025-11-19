@@ -38,13 +38,14 @@ public class ContactUsService : IContactUsService
 
         return new PagedContactUsResponse
         {
-            Items = items.Select(MapToResponse).ToList(),
-            TotalCount = totalCount,
-            PageNumber = page,
-            PageSize = size,
-            TotalPages = totalPages,
-            HasPreviousPage = page > 0,
-            HasNextPage = page < totalPages - 1
+            Content = items.Select(MapToResponse).ToList(),
+            Page = new Application.Dtos.Common.PageInfo
+            {
+                Size = size,
+                Number = page,
+                TotalElements = totalCount,
+                TotalPages = totalPages
+            }
         };
     }
 

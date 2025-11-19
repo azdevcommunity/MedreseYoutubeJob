@@ -57,8 +57,7 @@ public class CategoryService : ICategoryService
         var category = new Core.Entities.Category
         {
             Name = request.Name,
-            ParentId = request.ParentId,
-            Slug = request.Slug
+            ParentId = request.ParentId
         };
 
         var createdCategory = await _categoryRepository.CreateCategoryAsync(category);
@@ -75,7 +74,7 @@ public class CategoryService : ICategoryService
 
         category.Name = request.Name;
         category.ParentId = request.ParentId;
-        category.Slug = request.Slug;
+        //category.IsActive = request.IsActive;
 
         var updatedCategory = await _categoryRepository.UpdateCategoryAsync(category);
         return MapToResponse(updatedCategory);
@@ -117,7 +116,7 @@ public class CategoryService : ICategoryService
             Id = category.Id,
             Name = category.Name,
             ParentId = category.ParentId,
-            Slug = category.Slug
+            IsActive = category.IsActive
         };
     }
 
@@ -130,7 +129,7 @@ public class CategoryService : ICategoryService
                 Id = c.Id,
                 Name = c.Name,
                 ParentId = c.ParentId,
-                Slug = c.Slug,
+                IsActive = c.IsActive,
                 Children = BuildCategoryTree(categories, c.Id)
             })
             .ToList();

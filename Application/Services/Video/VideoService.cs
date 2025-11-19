@@ -1,3 +1,4 @@
+using YoutubeApiSynchronize.Application.Dtos.Common;
 using YoutubeApiSynchronize.Application.Dtos.Video.Requests;
 using YoutubeApiSynchronize.Application.Dtos.Video.Responses;
 using YoutubeApiSynchronize.Core.Interfaces.Video;
@@ -18,7 +19,7 @@ public class VideoService : IVideoService
         return await _videoRepository.GetAllAsync();
     }
 
-    public async Task<(List<VideoResponse> Items, long TotalCount)> GetAllPagingAsync(
+    public async Task<PagedResponse<VideoResponse>> GetAllPagingAsync(
         int page, int size, string? search, int shorts)
     {
         if (size <= 0)

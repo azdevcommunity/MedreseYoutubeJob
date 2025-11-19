@@ -21,6 +21,10 @@ public interface IArticleRepository
     
     Task<Core.Entities.Article> CreateAsync(Core.Entities.Article article);
     
+    Task<Core.Entities.Article> CreateArticleWithCategoriesAsync(
+        string publishedAt, string title, string content, string imageUrl, 
+        int authorId, HashSet<int> categoryIds);
+    
     Task<Core.Entities.Article> UpdateAsync(Core.Entities.Article article);
     
     Task DeleteAsync(int id);
