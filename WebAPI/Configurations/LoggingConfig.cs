@@ -9,6 +9,13 @@ public static class LoggingConfig
 {
     public static WebApplicationBuilder AddLoggingConfiguration(this WebApplicationBuilder builder)
     {
+        Console.WriteLine("=== Configuration Values ===");
+        Console.WriteLine($"DB__Host: {builder.Configuration["DB__Host"]}");
+        Console.WriteLine($"DB__Port: {builder.Configuration["DB__Port"]}");
+        Console.WriteLine($"DB__Name: {builder.Configuration["DB__Name"]}");
+        Console.WriteLine($"DB__Username: {builder.Configuration["DB__Username"]}");
+        Console.WriteLine($"DB__Password: {builder.Configuration["DB__Password"]}");
+        
         builder.Configuration
             .AddJsonFile("serilog.json", optional: false, reloadOnChange: true)
             .AddJsonFile($"serilog.{builder.Configuration["ASPNETCORE_ENVIRONMENT"]}.json", optional: true,
