@@ -14,15 +14,11 @@ public class ArticleController : ControllerBase
 {
     private readonly IArticleService _articleService;
     private readonly ILogger _logger;
-    private readonly IConfiguration _configuration;
-    private readonly IOptions<DatabaseSettings> _databaseSettings;
 
-    public ArticleController(IArticleService articleService, ILogger logger, IConfiguration configuration, IOptions<DatabaseSettings> databaseSettings)
+    public ArticleController(IArticleService articleService, ILogger logger)
     {
         _articleService = articleService;
         _logger = logger;
-        _configuration = configuration;
-        _databaseSettings = databaseSettings;
     }
 
     [HttpGet]
@@ -49,7 +45,7 @@ public class ArticleController : ControllerBase
         int id,
         [FromHeader(Name = "X-Admin-Request")] bool isAdminRequest = false)
     {
-        _logger.Information("GetArticle endpoint called with id: {Id}, isAdminRequest: {IsAdminRequest}", 
+        _logger.Information("GetArticle endpoint called with id: {Id}, isAdminRequest: {IsAdminRequest}",
             id, isAdminRequest);
         var article = await _articleService.GetArticleByIdAsync(id, isAdminRequest);
         return Ok(article);
@@ -89,7 +85,7 @@ public class ArticleController : ControllerBase
 
     [HttpPut("{id}")]
     public async Task<ActionResult<Core.Entities.Article>> UpdateArticle(
-        int id, 
+        int id,
         [FromBody] UpdateArticleRequest request)
     {
         _logger.Information("UpdateArticle endpoint called with id: {Id}", id);
@@ -111,14 +107,5 @@ public class ArticleController : ControllerBase
         _logger.Information("DeleteArticles endpoint called with {Count} ids", request.Ids.Count);
         await _articleService.DeleteArticlesAsync(request);
         return NoContent();
-    }
-
-    [HttpGet("test")]
-    public IActionResult TestConnection()
-    {
-        return Ok(new
-        {
-            _databaseSettings.Value
-        }); 
     }
 }
