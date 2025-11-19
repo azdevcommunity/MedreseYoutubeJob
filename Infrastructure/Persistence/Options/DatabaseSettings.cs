@@ -1,4 +1,4 @@
-namespace YoutubeApiSynchronize.Core.Options;
+namespace YoutubeApiSynchronize.Infrastructure.Persistence.Options;
 
 public class DatabaseSettings
 {

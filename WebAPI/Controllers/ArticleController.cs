@@ -3,7 +3,6 @@ using Microsoft.Extensions.Options;
 using YoutubeApiSynchronize.Application.Dtos.Article.Requests;
 using YoutubeApiSynchronize.Application.Dtos.Article.Responses;
 using YoutubeApiSynchronize.Core.Interfaces.Article;
-using YoutubeApiSynchronize.Core.Options;
 using ILogger = Serilog.ILogger;
 
 namespace YoutubeApiSynchronize.WebAPI.Controllers;

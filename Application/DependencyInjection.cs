@@ -1,3 +1,4 @@
+using YoutubeApiSynchronize.Application.Options;
 using YoutubeApiSynchronize.Application.Services;
 using YoutubeApiSynchronize.Application.Services.Article;
 using YoutubeApiSynchronize.Application.Services.Author;
@@ -13,7 +14,6 @@ using YoutubeApiSynchronize.Application.Services.Tag;
 using YoutubeApiSynchronize.Application.Services.Video;
 using YoutubeApiSynchronize.Application.Services.Youtube;
 using YoutubeApiSynchronize.Application.UseCases;
-using YoutubeApiSynchronize.Core.Interfaces;
 using YoutubeApiSynchronize.Core.Interfaces.Article;
 using YoutubeApiSynchronize.Core.Interfaces.File;
 using YoutubeApiSynchronize.Core.Interfaces.Notification;
@@ -23,7 +23,7 @@ using YoutubeApiSynchronize.Core.Interfaces.Search;
 using YoutubeApiSynchronize.Core.Interfaces.Statistic;
 using YoutubeApiSynchronize.Core.Interfaces.Video;
 using YoutubeApiSynchronize.Core.Interfaces.Youtube;
-using YoutubeApiSynchronize.Core.Options;
+using YoutubeApiSynchronize.Infrastructure.ExternalServices.Options;
 
 namespace YoutubeApiSynchronize.Application;
 

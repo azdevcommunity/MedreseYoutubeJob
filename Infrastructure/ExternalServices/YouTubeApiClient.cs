@@ -4,7 +4,7 @@ using Google.Apis.YouTube.v3.Data;
 using Microsoft.Extensions.Options;
 using YoutubeApiSynchronize.Core.Interfaces;
 using YoutubeApiSynchronize.Core.Interfaces.Youtube;
-using YoutubeApiSynchronize.Core.Options;
+using YoutubeApiSynchronize.Infrastructure.ExternalServices.Options;
 
 namespace YoutubeApiSynchronize.Infrastructure.ExternalServices;
 

@@ -12,9 +12,9 @@ using YoutubeApiSynchronize.Core.Interfaces.Statistic;
 using YoutubeApiSynchronize.Core.Interfaces.Tag;
 using YoutubeApiSynchronize.Core.Interfaces.Video;
 using YoutubeApiSynchronize.Core.Interfaces.Youtube;
-using YoutubeApiSynchronize.Core.Options;
 using YoutubeApiSynchronize.Infrastructure.ExternalServices;
 using YoutubeApiSynchronize.Infrastructure.Persistence.Database;
+using YoutubeApiSynchronize.Infrastructure.Persistence.Options;
 using YoutubeApiSynchronize.Infrastructure.Persistence.Repositories;
 
 namespace YoutubeApiSynchronize.Infrastructure;

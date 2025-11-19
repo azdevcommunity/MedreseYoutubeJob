@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using YoutubeApiSynchronize.Application.UseCases;
 using YoutubeApiSynchronize.Core.Interfaces.Notification;
 using YoutubeApiSynchronize.Core.Interfaces.Youtube;
-using YoutubeApiSynchronize.Core.Options;
+using YoutubeApiSynchronize.Infrastructure.Persistence.Options;
 using ILogger = Serilog.ILogger;
 
 namespace YoutubeApiSynchronize.WebAPI.Controllers;

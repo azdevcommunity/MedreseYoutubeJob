@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Options;
 using YoutubeApiSynchronize.Core.Entities;
 using YoutubeApiSynchronize.Core.Interfaces.Youtube;
-using YoutubeApiSynchronize.Core.Options;
+using YoutubeApiSynchronize.Infrastructure.ExternalServices.Options;
 using ILogger = Serilog.ILogger;
 
 namespace YoutubeApiSynchronize.Application.Services.Youtube;

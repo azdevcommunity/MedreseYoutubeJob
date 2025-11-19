@@ -2,7 +2,7 @@ using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
 using Microsoft.Extensions.Options;
 using YoutubeApiSynchronize.Core.Interfaces.File;
-using YoutubeApiSynchronize.Core.Options;
+using YoutubeApiSynchronize.Infrastructure.ExternalServices.Options;
 using ILogger = Serilog.ILogger;
 
 namespace YoutubeApiSynchronize.Application.Services.File;

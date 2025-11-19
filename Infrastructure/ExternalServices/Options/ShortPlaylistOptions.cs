@@ -1,4 +1,4 @@
-namespace YoutubeApiSynchronize.Core.Options;
+namespace YoutubeApiSynchronize.Infrastructure.ExternalServices.Options;
 
 public class ShortPlaylistsOptions
 {

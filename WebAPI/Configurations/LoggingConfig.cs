@@ -1,7 +1,6 @@
 using System.Net;
 using Serilog;
 using Serilog.Sinks.Grafana.Loki;
-using YoutubeApiSynchronize.Core.Options;
 
 namespace YoutubeApiSynchronize.WebAPI.Configurations;
 
